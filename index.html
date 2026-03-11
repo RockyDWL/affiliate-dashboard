@@ -123,6 +123,41 @@
   .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: #000; padding: 10px 20px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; }
   .toast.show { opacity: 1; transform: translateY(0); }
 
+
+  /* Security */
+  .security-bar { display:flex; align-items:center; gap:12px; background:rgba(0,229,160,0.05); border:1px solid rgba(0,229,160,0.15); border-radius:6px; padding:10px 14px; margin-bottom:18px; flex-wrap:wrap; }
+  .security-bar .s-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); flex:1; min-width:180px; }
+  .security-bar .s-label span { color:var(--muted); }
+  .security-toggle { display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); cursor:pointer; white-space:nowrap; }
+  .security-toggle input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; cursor:pointer; }
+  .masked { filter: blur(5px); transition: filter 0.2s; cursor:pointer; user-select:none; }
+  .masked:hover { filter: blur(0); }
+  .compress-note { font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:4px; }
+  .key-strength { display:inline-block; padding:1px 6px; border-radius:3px; font-size:9px; font-family:'IBM Plex Mono',monospace; font-weight:600; margin-left:6px; }
+  .key-strength.ok { background:rgba(0,229,160,0.15); color:var(--accent); }
+  .key-strength.weak { background:rgba(255,149,0,0.15); color:var(--warn); }
+  .key-strength.none { background:rgba(255,59,92,0.15); color:var(--kill); }
+
+  /* Storage Section */
+  .storage-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px; }
+  .storage-section h2 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+  .storage-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .storage-opt { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; cursor: pointer; transition: border-color 0.2s; }
+  .storage-opt:hover { border-color: var(--muted); }
+  .storage-opt.active { border-color: var(--accent); background: rgba(0,229,160,0.05); }
+  .storage-opt input[type=radio] { display:none; }
+  .storage-opt .opt-title { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .storage-opt .opt-title .dot { width:8px; height:8px; border-radius:50%; border:2px solid var(--muted); flex-shrink:0; }
+  .storage-opt.active .opt-title .dot { background: var(--accent); border-color: var(--accent); }
+  .storage-opt .opt-desc { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; line-height: 1.5; }
+  .storage-opt .opt-badge { display:inline-block; padding:1px 7px; border-radius:3px; font-size:9px; font-family:'IBM Plex Mono',monospace; font-weight:600; margin-left:6px; }
+  .storage-opt .opt-badge.safe { background:rgba(0,229,160,0.15); color:var(--win); }
+  .storage-opt .opt-badge.warn { background:rgba(255,149,0,0.15); color:var(--warn); }
+  .storage-opt .opt-badge.info { background:rgba(61,139,255,0.15); color:var(--accent2); }
+  .storage-status { margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); padding: 8px 12px; background: var(--bg); border-radius: 4px; border: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; }
+  .storage-status span { color: var(--text); }
+  .storage-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
   @media (max-width: 1200px) { .summary { grid-template-columns: repeat(3, 1fr); } .input-hint { grid-template-columns: 1fr; } }
   @media (max-width: 768px) { body { padding: 16px; } .summary { grid-template-columns: repeat(2, 1fr); } .fields { grid-template-columns: 1fr 1fr; } .auto-preview { grid-template-columns: 1fr 1fr; } }
 </style>
@@ -144,20 +179,69 @@
   <div class="card"><div class="label">Avg Amazon CR</div><div class="value" id="s-cr">—</div><div class="sub">亚马逊转化率</div></div>
 </div>
 
+<!-- ===== Data Storage Section ===== -->
+<div class="storage-section">
+  <h2>💾 本地数据存储设置</h2>
+  <div class="storage-row">
+    <label class="storage-opt active" id="opt-localstorage" onclick="setStorage('localstorage')">
+      <input type="radio" name="storageMode" value="localstorage" checked>
+      <div class="opt-title"><span class="dot"></span> localStorage <span class="opt-badge safe">默认</span></div>
+      <div class="opt-desc">数据存在浏览器本地，关闭页面不丢失。<br>同一浏览器随时可访问。</div>
+    </label>
+    <label class="storage-opt" id="opt-sessionstorage" onclick="setStorage('sessionstorage')">
+      <input type="radio" name="storageMode" value="sessionstorage">
+      <div class="opt-title"><span class="dot"></span> sessionStorage <span class="opt-badge warn">临时</span></div>
+      <div class="opt-desc">数据仅在本次标签页有效，<br>关闭标签页后自动清除，更私密。</div>
+    </label>
+    <label class="storage-opt" id="opt-indexeddb" onclick="setStorage('indexeddb')">
+      <input type="radio" name="storageMode" value="indexeddb">
+      <div class="opt-title"><span class="dot"></span> IndexedDB <span class="opt-badge info">大容量</span></div>
+      <div class="opt-desc">浏览器内置数据库，容量最大（50MB+），<br>适合长期大量数据存储。</div>
+    </label>
+    <label class="storage-opt" id="opt-file" onclick="setStorage('file')">
+      <input type="radio" name="storageMode" value="file">
+      <div class="opt-title"><span class="dot"></span> 导出文件 <span class="opt-badge safe">最安全</span></div>
+      <div class="opt-desc">不存浏览器，每次保存时下载 JSON 文件到本地磁盘，数据完全在你手里。</div>
+    </label>
+  </div>
+  <div class="storage-status" id="storageStatus">
+    <span>存储模式：</span><span id="st-mode">localStorage</span>
+    &nbsp;|&nbsp; <span>记录数：</span><span id="st-count">0</span>
+    &nbsp;|&nbsp; <span>占用：</span><span id="st-size">0 KB</span>
+  </div>
+  <div class="storage-actions">
+    <button class="btn btn-export" onclick="exportJSON()" style="font-size:11px;padding:8px 16px">↓ 备份 JSON</button>
+    <button class="btn btn-secondary" onclick="importJSON()" style="font-size:11px;padding:8px 16px">↑ 导入 JSON</button>
+    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
+    <button class="btn btn-secondary" onclick="exportCSV()" style="font-size:11px;padding:8px 16px">↓ 导出 CSV</button>
+  </div>
+</div>
+
 <!-- ===== OCR Section ===== -->
 <div class="section-box">
-  <h2>📷 截图自动识别数据（Claude Vision AI）</h2>
+  <h2>📷 截图自动识别数据</h2>
 
   <div class="ocr-top">
+    <div class="ocr-field" style="min-width:160px">
+      <label>AI 识别引擎</label>
+      <select id="aiProvider" onchange="onProviderChange()" style="height:37px">
+        <option value="claude">🤖 Claude（支持图片）</option>
+        <option value="deepseek">🐋 DeepSeek（文字数据）</option>
+      </select>
+      <div class="key-note" id="providerNote">Claude: 直接上传截图识别</div>
+    </div>
     <div class="ocr-field" style="flex:2;min-width:260px">
       <label>API 端点 Endpoint <span style="color:var(--muted);font-weight:normal">（中转服务填此处）</span></label>
-      <input id="apiEndpoint" placeholder="留空=官方 / 中转填: https://aicode.cat/v1/messages" oninput="saveSettings()" style="width:100%">
-      <div class="key-note">中转服务用户填写中转地址，国内直接访问更稳定</div>
+      <input id="apiEndpoint" placeholder="留空=默认端点 / 中转填自定义地址" oninput="saveSettings()" style="width:100%">
+      <div class="key-note" id="endpointNote">Claude官方: api.anthropic.com &nbsp;|&nbsp; DeepSeek: api.deepseek.com</div>
     </div>
     <div class="ocr-field" style="flex:2;min-width:260px">
       <label>API Key &nbsp;<span style="color:var(--kill);font-size:10px">*必填</span></label>
-      <input id="apiKey" type="password" placeholder="官方 sk-ant-... 或中转服务 Key" oninput="saveSettings()" style="width:100%">
-      <div class="key-note">Key 仅存于本地浏览器 &nbsp;·&nbsp; <a href="https://console.anthropic.com/settings/keys" target="_blank">官方 Key →</a></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="apiKey" type="password" placeholder="Claude: sk-ant-... / DeepSeek: sk-... / 中转Key" oninput="saveSettings(); updateSecStatus()" style="flex:1">
+        <button onclick="clearKey()" class="btn btn-danger" style="padding:8px 12px;font-size:10px;white-space:nowrap">清除 Key</button>
+      </div>
+      <div class="key-note">Key 仅存于本地浏览器，不经过任何中间服务器 &nbsp;·&nbsp; <a href="https://console.anthropic.com/settings/keys" target="_blank">官方 Key →</a></div>
     </div>
     <div class="ocr-field" style="min-width:160px">
       <label>截图来源平台</label>
@@ -171,11 +255,30 @@
     </div>
   </div>
 
-  <div class="drop-zone" id="dropZone">
-    <input type="file" accept="image/*" id="imgInput" onchange="handleImageSelect(event)">
-    <div class="dz-icon">🖼</div>
-    <div class="dz-text">点击选择 / 拖拽截图到这里</div>
-    <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 广告平台报表、联盟后台数据表格截图均可</div>
+
+  <div class="security-bar">
+    <div class="s-label">🔒 安全状态 &nbsp;<span id="secStatus">Key 未设置</span><span class="key-strength none" id="keyStrength">未配置</span></div>
+    <label class="security-toggle"><input type="checkbox" id="maskSensitive" onchange="toggleMask()"> 遮挡敏感数字（佣金/利润）</label>
+    <label class="security-toggle"><input type="checkbox" id="sessionOnly" onchange="saveSettings()"> 会话结束后自动清除 Key</label>
+    <label class="security-toggle"><input type="checkbox" id="compressImg" checked> 上传前压缩截图（推荐）</label>
+  </div>
+
+  <div id="claudeInputArea">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" accept="image/*" id="imgInput" onchange="handleImageSelect(event)">
+      <div class="dz-icon">🖼</div>
+      <div class="dz-text">点击选择 / 拖拽截图到这里</div>
+      <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 广告平台报表、联盟后台数据表格截图均可</div>
+    </div>
+  </div>
+  <div id="deepseekInputArea" style="display:none">
+    <div style="margin-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">
+      📋 将广告平台数据<strong style="color:var(--text)">复制粘贴</strong>到下方文本框，DeepSeek 将解析并填入表单
+    </div>
+    <textarea id="deepseekText" rows="6" placeholder="粘贴数据到这里，例如：&#10;Date: 2025-01-15&#10;Impressions: 50000&#10;Clicks: 320&#10;Cost: $45.20&#10;Amazon Clicks: 198&#10;Orders: 3&#10;Commission: $28.50" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;resize:vertical;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    <div style="margin-top:8px">
+      <button class="btn btn-primary" onclick="processDeepSeekText()" style="font-size:11px;padding:8px 18px">🐋 DeepSeek 解析数据</button>
+    </div>
   </div>
 
   <div class="ocr-spinner" id="ocrSpinner">
@@ -256,24 +359,346 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ---- State ----
-  let data = JSON.parse(localStorage.getItem("affiliateData_v2")) || [];
+  // ============================================================
+  // STATE
+  // ============================================================
+  let data = [];
+  let maskEnabled = false;
+  let storageMode = localStorage.getItem("storageMode") || "localstorage";
+  const DB_KEY = "affiliateData_v2";
+
+  // ============================================================
+  // INDEXED DB
+  // ============================================================
+  let idb = null;
+  function openIDB() {
+    return new Promise((res, rej) => {
+      const req = indexedDB.open("AffDashDB", 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore("records", {keyPath:"_id", autoIncrement:true});
+      req.onsuccess = e => { idb = e.target.result; res(idb); };
+      req.onerror = () => rej("IDB open failed");
+    });
+  }
+  async function idbGetAll() {
+    await openIDB();
+    return new Promise((res, rej) => {
+      const tx = idb.transaction("records","readonly");
+      const req = tx.objectStore("records").getAll();
+      req.onsuccess = () => res(req.result.map(r => { const {_id,...rest}=r; return rest; }));
+      req.onerror = () => rej("IDB read failed");
+    });
+  }
+  async function idbSaveAll(arr) {
+    await openIDB();
+    return new Promise((res, rej) => {
+      const tx = idb.transaction("records","readwrite");
+      const store = tx.objectStore("records");
+      store.clear();
+      arr.forEach((d,i) => store.add({...d, _id: i+1}));
+      tx.oncomplete = () => res();
+      tx.onerror = () => rej("IDB write failed");
+    });
+  }
+
+  // ============================================================
+  // STORAGE ABSTRACTION
+  // ============================================================
+  async function loadData() {
+    try {
+      if (storageMode === "localstorage") {
+        data = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
+      } else if (storageMode === "sessionstorage") {
+        data = JSON.parse(sessionStorage.getItem(DB_KEY) || "[]");
+      } else if (storageMode === "indexeddb") {
+        data = await idbGetAll();
+      } else if (storageMode === "file") {
+        data = JSON.parse(sessionStorage.getItem(DB_KEY+"_file") || "[]");
+      }
+    } catch(e) { data = []; }
+  }
+
+  async function save() {
+    try {
+      if (storageMode === "localstorage") {
+        localStorage.setItem(DB_KEY, JSON.stringify(data));
+      } else if (storageMode === "sessionstorage") {
+        sessionStorage.setItem(DB_KEY, JSON.stringify(data));
+      } else if (storageMode === "indexeddb") {
+        await idbSaveAll(data);
+      } else if (storageMode === "file") {
+        // file mode: keep in session memory + auto-download on every save
+        sessionStorage.setItem(DB_KEY+"_file", JSON.stringify(data));
+        downloadJSON(data, "affiliate_autosave_"+today+".json");
+        showToast("💾 已自动下载到本地文件");
+      }
+      updateStorageStatus();
+    } catch(e) { showToast("存储失败: "+e, true); }
+  }
+
+  function setStorage(mode) {
+    // Migrate data to new storage
+    const oldData = [...data];
+    storageMode = mode;
+    localStorage.setItem("storageMode", mode);
+    // Update UI
+    ["localstorage","sessionstorage","indexeddb","file"].forEach(m => {
+      document.getElementById("opt-"+m).classList.toggle("active", m === mode);
+    });
+    // Re-save to new location
+    data = oldData;
+    save().then(() => {
+      render();
+      showToast("存储模式已切换为 " + {localstorage:"localStorage",sessionstorage:"sessionStorage",indexeddb:"IndexedDB",file:"本地文件"}[mode]);
+    });
+  }
+
+  function updateStorageStatus() {
+    const modeNames = {localstorage:"localStorage",sessionstorage:"sessionStorage",indexeddb:"IndexedDB",file:"本地文件（内存缓存）"};
+    document.getElementById("st-mode").textContent = modeNames[storageMode] || storageMode;
+    document.getElementById("st-count").textContent = data.length;
+    let sizeStr = "—";
+    if (storageMode === "localstorage") {
+      const raw = localStorage.getItem(DB_KEY) || "";
+      sizeStr = (raw.length / 1024).toFixed(1) + " KB";
+    } else if (storageMode === "sessionstorage") {
+      const raw = sessionStorage.getItem(DB_KEY) || "";
+      sizeStr = (raw.length / 1024).toFixed(1) + " KB";
+    } else if (storageMode === "file") {
+      const raw = sessionStorage.getItem(DB_KEY+"_file") || "";
+      sizeStr = (raw.length / 1024).toFixed(1) + " KB (内存)";
+    } else {
+      sizeStr = "IndexedDB";
+    }
+    document.getElementById("st-size").textContent = sizeStr;
+  }
+
+  function exportJSON() {
+    if (data.length === 0) { showToast("没有数据可导出", true); return; }
+    downloadJSON(data, "affiliate_backup_"+today+".json");
+    showToast("JSON 备份已下载");
+  }
+  function downloadJSON(arr, filename) {
+    const blob = new Blob([JSON.stringify(arr, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+  }
+  function importJSON() { document.getElementById("importFileInput").click(); }
+  function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        if (!Array.isArray(imported)) throw new Error("格式错误");
+        if (!confirm(`导入 ${imported.length} 条记录？（将覆盖当前数据）`)) return;
+        data = imported;
+        await save();
+        render();
+        showToast("✓ 已导入 " + imported.length + " 条记录");
+      } catch(err) { showToast("导入失败: " + err.message, true); }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  // ============================================================
+  // AI PROVIDER
+  // ============================================================
+  function onProviderChange() {
+    const p = document.getElementById("aiProvider").value;
+    const isDeepSeek = p === "deepseek";
+    document.getElementById("claudeInputArea").style.display = isDeepSeek ? "none" : "block";
+    document.getElementById("deepseekInputArea").style.display = isDeepSeek ? "block" : "none";
+    document.getElementById("providerNote").textContent = isDeepSeek
+      ? "DeepSeek: 粘贴文字数据解析（不支持图片）"
+      : "Claude: 直接上传截图识别";
+    document.getElementById("endpointNote").textContent = isDeepSeek
+      ? "DeepSeek默认: api.deepseek.com/v1/chat/completions"
+      : "Claude官方: api.anthropic.com | 中转: 填自定义地址";
+    document.getElementById("apiKey").placeholder = isDeepSeek
+      ? "DeepSeek API Key: sk-..."
+      : "Claude: sk-ant-... / 中转Key";
+  }
+
+  // DeepSeek text parsing
+  async function processDeepSeekText() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    if (!apiKey) { showOcrError("请先填写 DeepSeek API Key"); return; }
+    const text = document.getElementById("deepseekText").value.trim();
+    if (!text) { showOcrError("请先粘贴数据到文本框"); return; }
+
+    document.getElementById("ocrSpinner").classList.add("visible");
+    document.getElementById("ocrSuccess").classList.remove("visible");
+    document.getElementById("ocrError").classList.remove("visible");
+
+    const customEndpoint = document.getElementById("apiEndpoint").value.trim();
+    const endpoint = customEndpoint || "https://api.deepseek.com/v1/chat/completions";
+
+    const prompt = `从以下广告数据文本中提取数字，以JSON格式返回，找不到的字段返回null。
+字段：impressions(曝光), clicks(广告点击), cost(花费,去掉$), amazonClicks(跳转亚马逊/Detail Page Views), orders(订单), commission(佣金,去掉$), offer(产品名), account(账户名)
+只返回JSON：{"impressions":null,"clicks":null,"cost":null,"amazonClicks":null,"orders":null,"commission":null,"offer":null,"account":null}
+
+数据：
+${text}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          max_tokens: 500,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      document.getElementById("ocrSpinner").classList.remove("visible");
+      if (!response.ok) {
+        const err = await response.json();
+        showOcrError("DeepSeek API 错误: " + (err.error?.message || response.status)); return;
+      }
+
+      const result = await response.json();
+      const rawText = result.choices?.[0]?.message?.content?.trim() || "";
+      document.getElementById("ocrPreviewRow").classList.add("visible");
+      document.getElementById("ocrResult").textContent = "DeepSeek 返回：
+" + rawText;
+
+      const clean = rawText.replace(/```json|```/g,"").trim();
+      let parsed;
+      try { parsed = JSON.parse(clean); }
+      catch { showOcrError("解析失败，请检查粘贴的数据格式"); return; }
+
+      fillFormFromParsed(parsed);
+    } catch(err) {
+      document.getElementById("ocrSpinner").classList.remove("visible");
+      showOcrError("请求失败: " + err.message);
+    }
+  }
+
+  function fillFormFromParsed(parsed) {
+    const fieldMap = {
+      impressions:"f-impr", clicks:"f-clicks", cost:"f-cost",
+      amazonClicks:"f-aclicks", orders:"f-orders", commission:"f-comm",
+      offer:"f-offer", account:"f-account"
+    };
+    const filled = [];
+    for (const [key, id] of Object.entries(fieldMap)) {
+      if (parsed[key] !== null && parsed[key] !== undefined && parsed[key] !== "") {
+        const el = document.getElementById(id);
+        el.value = parsed[key];
+        el.classList.add("ai-filled");
+        setTimeout(() => el.classList.remove("ai-filled"), 3000);
+        filled.push(key);
+      }
+    }
+    if (!document.getElementById("f-date").value) document.getElementById("f-date").value = today;
+    calcPreview();
+    const successMsg = `✓ 解析成功！已填入 ${filled.length} 个字段：${filled.join(", ")}
+请核对后点击 Save Record 保存。`;
+    document.getElementById("ocrSuccess").textContent = successMsg;
+    document.getElementById("ocrSuccess").classList.add("visible");
+  }
+
+  // ---- Simple obfuscation (XOR + base64) for localStorage key storage ----
+  // Not cryptographic-grade, but prevents plain-text exposure in DevTools
+  const OBF_SEED = "aff_dash_2025";
+  function obfuscate(str) {
+    if (!str) return "";
+    let out = "";
+    for (let i = 0; i < str.length; i++)
+      out += String.fromCharCode(str.charCodeAt(i) ^ OBF_SEED.charCodeAt(i % OBF_SEED.length));
+    return btoa(out);
+  }
+  function deobfuscate(b64) {
+    if (!b64) return "";
+    try {
+      const str = atob(b64);
+      let out = "";
+      for (let i = 0; i < str.length; i++)
+        out += String.fromCharCode(str.charCodeAt(i) ^ OBF_SEED.charCodeAt(i % OBF_SEED.length));
+      return out;
+    } catch { return ""; }
+  }
 
   // ---- Init ----
   document.getElementById("todayDate").textContent = new Date().toLocaleDateString("zh-CN", {year:"numeric",month:"long",day:"numeric",weekday:"long"});
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("f-date").value = today;
-  // Restore API key
-  const savedKey = localStorage.getItem("anthropicKey") || "";
+
+  // Restore API settings
+  const savedKey      = deobfuscate(localStorage.getItem("adk") || sessionStorage.getItem("adk") || "");
   const savedEndpoint = localStorage.getItem("anthropicEndpoint") || "";
-  if (savedKey) document.getElementById("apiKey").value = savedKey;
+  const sessionOnly   = localStorage.getItem("sessionOnly") === "1";
+  if (savedKey)      document.getElementById("apiKey").value = savedKey;
   if (savedEndpoint) document.getElementById("apiEndpoint").value = savedEndpoint;
-  render();
+  if (sessionOnly)   document.getElementById("sessionOnly").checked = true;
+  if (localStorage.getItem("compressImg") === "0") document.getElementById("compressImg").checked = false;
+
+  // Restore storage mode UI
+  ["localstorage","sessionstorage","indexeddb","file"].forEach(m => {
+    document.getElementById("opt-"+m).classList.toggle("active", m === storageMode);
+  });
+
+  updateSecStatus();
+  // Async load data then render
+  loadData().then(() => { render(); updateStorageStatus(); });
 
   // ---- Settings ----
   function saveSettings() {
-    localStorage.setItem("anthropicKey", document.getElementById("apiKey").value.trim());
-    localStorage.setItem("anthropicEndpoint", document.getElementById("apiEndpoint").value.trim());
+    const key      = document.getElementById("apiKey").value.trim();
+    const endpoint = document.getElementById("apiEndpoint").value.trim();
+    const sessOnly = document.getElementById("sessionOnly").checked;
+
+    localStorage.setItem("anthropicEndpoint", endpoint);
+    localStorage.setItem("sessionOnly", sessOnly ? "1" : "0");
+    localStorage.setItem("compressImg", document.getElementById("compressImg").checked ? "1" : "0");
+
+    const obfKey = obfuscate(key);
+    if (sessOnly) {
+      // store only in sessionStorage (cleared when tab closes)
+      sessionStorage.setItem("adk", obfKey);
+      localStorage.removeItem("adk");
+    } else {
+      localStorage.setItem("adk", obfKey);
+      sessionStorage.removeItem("adk");
+    }
+    updateSecStatus();
+  }
+
+  function clearKey() {
+    if (!confirm("确认清除已保存的 API Key？")) return;
+    document.getElementById("apiKey").value = "";
+    localStorage.removeItem("adk");
+    sessionStorage.removeItem("adk");
+    updateSecStatus();
+    showToast("✓ API Key 已清除");
+  }
+
+  function updateSecStatus() {
+    const key = document.getElementById("apiKey").value.trim();
+    const statusEl = document.getElementById("secStatus");
+    const badgeEl  = document.getElementById("keyStrength");
+    const sessOnly = document.getElementById("sessionOnly").checked;
+
+    if (!key) {
+      statusEl.textContent = "Key 未设置";
+      badgeEl.textContent = "未配置"; badgeEl.className = "key-strength none"; return;
+    }
+    const isRelay = !!document.getElementById("apiEndpoint").value.trim();
+    const storage = sessOnly ? "会话存储（关闭即清除）" : "本地加密存储";
+    statusEl.textContent = (isRelay ? "中转模式" : "官方直连") + " · " + storage;
+    badgeEl.textContent = "已配置"; badgeEl.className = "key-strength ok";
+  }
+
+  // ---- Mask sensitive numbers ----
+  function toggleMask() {
+    maskEnabled = document.getElementById("maskSensitive").checked;
+    render();
+  }
+  function mayMask(val) {
+    return maskEnabled ? `<span class="masked" title="点击查看">${val}</span>` : val;
   }
 
   // ---- Drag & Drop ----
@@ -310,8 +735,24 @@
       document.getElementById("ocrError").classList.remove("visible");
       document.getElementById("ocrSpinner").classList.add("visible");
 
-      const imageData = base64.split(",")[1];
-      const mediaType = file.type;
+      // Compress image before sending if enabled
+      const shouldCompress = document.getElementById("compressImg").checked;
+      let finalBase64 = base64;
+      let finalMediaType = file.type;
+
+      if (shouldCompress) {
+        try {
+          const compressResult = await compressImage(base64, 1200, 0.82);
+          finalBase64 = compressResult;
+          finalMediaType = "image/jpeg";
+          const origKB = Math.round(base64.length * 0.75 / 1024);
+          const newKB  = Math.round(compressResult.length * 0.75 / 1024);
+          document.getElementById("ocrResult").textContent = `图片已压缩: ${origKB}KB → ${newKB}KB，正在识别...`;
+        } catch(e) { /* fallback to original */ }
+      }
+
+      const imageData = finalBase64.split(",")[1];
+      const mediaType = finalMediaType;
       const platform = document.getElementById("platformType").value;
 
       const platformHint = {
@@ -394,24 +835,7 @@
           offer: "f-offer", account: "f-account"
         };
 
-        const filled = [];
-        for (const [key, id] of Object.entries(fieldMap)) {
-          if (parsed[key] !== null && parsed[key] !== undefined && parsed[key] !== "") {
-            const el = document.getElementById(id);
-            el.value = parsed[key];
-            el.classList.add("ai-filled");
-            setTimeout(() => el.classList.remove("ai-filled"), 3000);
-            filled.push(key);
-          }
-        }
-        // Set today as date if not set
-        if (!document.getElementById("f-date").value) document.getElementById("f-date").value = today;
-
-        calcPreview();
-
-        const successMsg = `✓ AI 识别成功！已自动填入 ${filled.length} 个字段：${filled.join(", ")}\n请核对数据后点击 Save Record 保存。`;
-        document.getElementById("ocrSuccess").textContent = successMsg;
-        document.getElementById("ocrSuccess").classList.add("visible");
+        fillFormFromParsed(parsed);
 
       } catch (err) {
         document.getElementById("ocrSpinner").classList.remove("visible");
@@ -419,6 +843,23 @@
       }
     };
     reader.readAsDataURL(file);
+  }
+
+  // ---- Image Compression ----
+  function compressImage(base64, maxW, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = base64;
+    });
   }
 
   function showOcrError(msg) {
@@ -475,8 +916,8 @@
   function addData() {
     const d = getFormValues();
     if (!d.date || !d.account || !d.offer) { showToast("请填写 Date / Account / Offer", true); return; }
-    data.push(d); save(); render(); clearForm();
-    showToast("✓ 记录已保存");
+    data.push(d);
+    save().then(() => { render(); clearForm(); if(storageMode !== "file") showToast("✓ 记录已保存"); });
   }
 
   function clearForm() {
@@ -490,14 +931,19 @@
     document.getElementById("ocrError").classList.remove("visible");
   }
 
-  function deleteRow(i) { data.splice(i, 1); save(); render(); showToast("已删除"); }
+  function deleteRow(i) { data.splice(i, 1); save().then(() => { render(); showToast("已删除"); }); }
 
   function clearAll() {
     if (!confirm("确认清空所有数据？")) return;
-    data = []; save(); render(); showToast("已清空", true);
+    data = [];
+    save().then(() => { render(); showToast("已清空", true); });
   }
 
-  function save() { localStorage.setItem("affiliateData_v2", JSON.stringify(data)); }
+
+  // Sanitize strings to prevent XSS injection from AI-filled or user-typed fields
+  function esc(str) {
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
 
   function render() {
     const tbody = document.getElementById("tableBody");
@@ -509,17 +955,17 @@
       const r = calcRow(d);
       const pc = r.profit >= 0 ? "profit-pos" : "profit-neg";
       return `<tr>
-        <td>${d.date}</td><td>${d.account}</td><td>${d.offer}</td>
+        <td>${esc(d.date)}</td><td>${esc(d.account)}</td><td>${esc(d.offer)}</td>
         <td>${d.impressions.toLocaleString()}</td><td>${d.clicks.toLocaleString()}</td>
         <td>$${d.cost.toFixed(2)}</td><td>${d.amazonClicks}</td><td>${d.orders}</td>
-        <td>$${d.commission.toFixed(2)}</td>
+        <td>${mayMask("$"+d.commission.toFixed(2))}</td>
         <td class="th-divider">${r.ctr !== null ? r.ctr.toFixed(2)+"%" : "—"}</td>
         <td>${r.cpc !== null ? "$"+r.cpc.toFixed(3) : "—"}</td>
         <td>${r.landingCtr !== null ? r.landingCtr.toFixed(2)+"%" : "—"}</td>
         <td class="th-divider">${r.amazonCR !== null ? r.amazonCR.toFixed(2)+"%" : "—"}</td>
         <td>${r.avgComm !== null ? "$"+r.avgComm.toFixed(2) : "—"}</td>
         <td>${r.epc !== null ? "$"+r.epc.toFixed(3) : "—"}</td>
-        <td class="th-divider ${pc}">${r.profit >= 0 ? "+" : ""}$${r.profit.toFixed(2)}</td>
+        <td class="th-divider ${pc}">${mayMask((r.profit >= 0 ? "+" : "")+"$"+r.profit.toFixed(2))}</td>
         <td><span class="status ${r.cls}">${r.status}</span></td>
         <td><span style="cursor:pointer;color:var(--muted)" onclick="deleteRow(${i})">✕</span></td>
       </tr>`;
@@ -565,6 +1011,13 @@
     a.href = URL.createObjectURL(blob); a.download = "affiliate_data_"+today+".csv"; a.click();
     showToast("CSV 已导出");
   }
+
+  // ---- Auto-clear key on tab close if sessionOnly ----
+  window.addEventListener("beforeunload", () => {
+    if (document.getElementById("sessionOnly").checked) {
+      sessionStorage.removeItem("adk");
+    }
+  });
 
   function showToast(msg, isErr=false) {
     const t = document.getElementById("toast");
