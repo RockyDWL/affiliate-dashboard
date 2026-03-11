@@ -165,7 +165,22 @@
   .storage-status span { color: var(--text); }
   .storage-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 
-  @media (max-width: 1200px) { .summary { grid-template-columns: repeat(3, 1fr); } .input-hint { grid-template-columns: 1fr; } }
+  /* Multi-row recognized results */
+  .multi-rows-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 24px; display:none; }
+  .multi-rows-box.visible { display: block; }
+  .multi-rows-box h2 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+  .multi-row-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 10px; display: grid; grid-template-columns: 24px repeat(9, 1fr) auto; gap: 8px; align-items: center; }
+  .multi-row-card:hover { border-color: var(--accent2); }
+  .multi-row-card.selected { border-color: var(--accent); background: rgba(0,229,160,0.04); }
+  .multi-row-card input { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; width: 100%; outline: none; }
+  .multi-row-card input:focus { border-color: var(--accent2); }
+  .multi-row-card .col-label { font-size: 9px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; margin-bottom: 3px; }
+  .multi-row-col { display: flex; flex-direction: column; }
+  .multi-row-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .multi-rows-header { display: grid; grid-template-columns: 24px repeat(9, 1fr) auto; gap: 8px; margin-bottom: 6px; padding: 0 0 6px 0; border-bottom: 1px solid var(--border); }
+  .multi-rows-header span { font-size: 9px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; }
+
+  @media (max-width: 1200px) { .summary { grid-template-columns: repeat(3, 1fr); } .input-hint { grid-template-columns: 1fr; } .multi-row-card { grid-template-columns: 24px 1fr 1fr 1fr; } }
   @media (max-width: 768px) { body { padding: 16px; } .summary { grid-template-columns: repeat(2, 1fr); } .fields { grid-template-columns: 1fr 1fr; } .auto-preview { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
@@ -339,6 +354,25 @@
 
   <div class="ocr-success" id="ocrSuccess"></div>
   <div class="ocr-error" id="ocrError"></div>
+</div>
+
+<!-- ===== Multi-row recognized results ===== -->
+<div class="multi-rows-box" id="multiRowsBox">
+  <h2>📊 识别结果 — 多条数据 <span id="multiRowsCount" style="color:var(--accent)"></span></h2>
+  <div class="multi-rows-header">
+    <span><input type="checkbox" id="selectAllRows" onchange="toggleSelectAll(this.checked)" title="全选"></span>
+    <span>Date</span><span>Account</span><span>Offer</span>
+    <span>Impr.</span><span>Clicks</span><span>Cost</span>
+    <span>AZ Clicks</span><span>Orders</span><span>Commission</span>
+    <span>操作</span>
+  </div>
+  <div id="multiRowsList"></div>
+  <div class="multi-row-actions">
+    <button class="btn btn-primary" onclick="saveSelectedRows()">💾 保存选中行</button>
+    <button class="btn btn-secondary" onclick="saveAllRows()">💾 保存全部</button>
+    <button class="btn btn-secondary" onclick="addEmptyMultiRow()" style="border-color:var(--accent2);color:var(--accent2)">＋ 手动添加一行</button>
+    <button class="btn btn-danger" onclick="clearMultiRows()">✕ 清空</button>
+  </div>
 </div>
 
 <!-- ===== Input Form ===== -->
@@ -641,9 +675,16 @@
           google: "Google Ads 广告数据"
         }[platform];
 
-        const prompt = `以下是从${platformHint}截图中 OCR 提取的文字，请提取广告数据，只返回 JSON，找不到的字段返回 null。
-字段：impressions(曝光), clicks(广告点击数), cost(花费美元数字,去掉$), amazonClicks(跳转亚马逊/Detail Page Views), orders(订单数), commission(佣金美元数字,去掉$), offer(产品名), account(账户名)
-只返回JSON，不要其他文字：{"impressions":null,"clicks":null,"cost":null,"amazonClicks":null,"orders":null,"commission":null,"offer":null,"account":null}
+        const prompt = `以下是从${platformHint}截图中 OCR 提取的文字，请提取所有数据行。
+
+每行字段：impressions(曝光), clicks(广告点击数), cost(花费美元数字去掉$和逗号), amazonClicks(跳转亚马逊/Detail Page Views), orders(订单数), commission(佣金美元数字去掉$和逗号), offer(产品名), account(账户名)
+
+规则：
+1. 必须返回 JSON 数组，即使只有一条也要用数组
+2. 有几行数据就返回几个对象
+3. 只返回 JSON 数组，不要其他文字
+
+格式：[{"impressions":null,"clicks":null,"cost":null,"amazonClicks":null,"orders":null,"commission":null,"offer":null,"account":null}]
 
 OCR文字：
 ${ocrText}`;
@@ -674,7 +715,10 @@ ${ocrText}`;
         try { parsed = JSON.parse(clean); }
         catch { showOcrError("JSON 解析失败，OCR 文字可能不完整，可尝试手动输入"); return; }
 
-        fillFormFromParsed(parsed);
+        const rows = Array.isArray(parsed) ? parsed : [parsed];
+        showMultiRows(rows);
+        document.getElementById("ocrSuccess").textContent = `✓ 识别到 ${rows.length} 条数据，请在下方核对后保存`;
+        document.getElementById("ocrSuccess").classList.add("visible");
 
       } catch(err) {
         document.getElementById("ocrSpinner").classList.remove("visible");
@@ -739,6 +783,109 @@ ${ocrText}`;
     renderMergeFields();
     document.getElementById("dropZoneText").textContent = "上传截图 1：广告平台（Impressions / Clicks / Cost）";
     showToast("合并缓存已清空");
+  }
+
+  // ============================================================
+  // MULTI-ROW DISPLAY & SAVE
+  // ============================================================
+  let multiRowsData = [];
+
+  function showMultiRows(rows) {
+    multiRowsData = rows.map(r => ({ ...r, date: r.date || today }));
+    const box  = document.getElementById("multiRowsBox");
+    const list = document.getElementById("multiRowsList");
+    document.getElementById("multiRowsCount").textContent = `(${rows.length} 条)`;
+    box.classList.add("visible");
+    list.innerHTML = multiRowsData.map((r, i) => `
+      <div class="multi-row-card selected" id="mrc-${i}">
+        <input type="checkbox" checked onchange="toggleRowSelect(${i},this.checked)" style="width:16px;cursor:pointer">
+        <div class="multi-row-col"><div class="col-label">Date</div><input type="date" value="${r.date||today}" onchange="multiRowsData[${i}].date=this.value"></div>
+        <div class="multi-row-col"><div class="col-label">Account</div><input type="text" value="${esc(r.account||'')}" onchange="multiRowsData[${i}].account=this.value" placeholder="账户"></div>
+        <div class="multi-row-col"><div class="col-label">Offer</div><input type="text" value="${esc(r.offer||'')}" onchange="multiRowsData[${i}].offer=this.value" placeholder="产品"></div>
+        <div class="multi-row-col"><div class="col-label">Impr.</div><input type="number" value="${r.impressions||0}" onchange="multiRowsData[${i}].impressions=Number(this.value)"></div>
+        <div class="multi-row-col"><div class="col-label">Clicks</div><input type="number" value="${r.clicks||0}" onchange="multiRowsData[${i}].clicks=Number(this.value)"></div>
+        <div class="multi-row-col"><div class="col-label">Cost $</div><input type="number" step="0.01" value="${r.cost||0}" onchange="multiRowsData[${i}].cost=Number(this.value)"></div>
+        <div class="multi-row-col"><div class="col-label">AZ Clicks</div><input type="number" value="${r.amazonClicks||0}" onchange="multiRowsData[${i}].amazonClicks=Number(this.value)"></div>
+        <div class="multi-row-col"><div class="col-label">Orders</div><input type="number" value="${r.orders||0}" onchange="multiRowsData[${i}].orders=Number(this.value)"></div>
+        <div class="multi-row-col"><div class="col-label">Comm $</div><input type="number" step="0.01" value="${r.commission||0}" onchange="multiRowsData[${i}].commission=Number(this.value)"></div>
+        <button class="btn btn-danger" onclick="removeMultiRow(${i})" style="padding:4px 8px;font-size:10px;white-space:nowrap">✕</button>
+      </div>`).join("");
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function toggleRowSelect(i, checked) {
+    const card = document.getElementById("mrc-"+i);
+    card.classList.toggle("selected", checked);
+  }
+
+  function toggleSelectAll(checked) {
+    multiRowsData.forEach((_, i) => {
+      const card = document.getElementById("mrc-"+i);
+      const cb = card.querySelector("input[type=checkbox]");
+      if (cb) cb.checked = checked;
+      card.classList.toggle("selected", checked);
+    });
+  }
+
+  function removeMultiRow(i) {
+    multiRowsData.splice(i, 1);
+    showMultiRows(multiRowsData);
+    if (multiRowsData.length === 0) clearMultiRows();
+  }
+
+  function clearMultiRows() {
+    multiRowsData = [];
+    document.getElementById("multiRowsBox").classList.remove("visible");
+    document.getElementById("multiRowsList").innerHTML = "";
+  }
+
+  function addEmptyMultiRow() {
+    const box = document.getElementById("multiRowsBox");
+    box.classList.add("visible");
+    multiRowsData.push({
+      date: today, account: "", offer: "",
+      impressions: 0, clicks: 0, cost: 0,
+      amazonClicks: 0, orders: 0, commission: 0
+    });
+    showMultiRows(multiRowsData);
+    // Scroll to last row
+    const cards = document.querySelectorAll(".multi-row-card");
+    if (cards.length) cards[cards.length-1].scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+
+  function saveSelectedRows() {
+    const selected = multiRowsData.filter((_, i) => {
+      const card = document.getElementById("mrc-"+i);
+      return card?.classList.contains("selected");
+    });
+    if (selected.length === 0) { showToast("请先选择要保存的行", true); return; }
+    _saveRows(selected);
+  }
+
+  function saveAllRows() { _saveRows(multiRowsData); }
+
+  function _saveRows(rows) {
+    let saved = 0;
+    rows.forEach(r => {
+      if (!r.date || (!r.account && !r.offer)) return;
+      data.push({
+        date: r.date || today,
+        account: r.account || "",
+        offer: r.offer || "",
+        impressions: Number(r.impressions) || 0,
+        clicks: Number(r.clicks) || 0,
+        cost: Number(r.cost) || 0,
+        amazonClicks: Number(r.amazonClicks) || 0,
+        orders: Number(r.orders) || 0,
+        commission: Number(r.commission) || 0,
+      });
+      saved++;
+    });
+    save().then(() => {
+      render();
+      showToast(`✓ 已保存 ${saved} 条记录`);
+      clearMultiRows();
+    });
   }
 
   function fillFormFromParsed(parsed) {
@@ -1038,20 +1185,25 @@ ${ocrText}`;
 
       const prompt = `${platformHint}。
 
-请仔细阅读截图中的所有数据，提取以下字段的数值，以 JSON 格式返回。如果某个字段在截图中找不到，返回 null。
+请仔细阅读截图中的所有数据行，将每一行数据都提取出来。
 
-需要提取的字段：
-- impressions: 曝光量/展示次数 (Impressions/曝光)
-- clicks: 广告点击数 (Clicks/点击)
-- cost: 广告花费，美元数字 (Cost/Spend/花费/消耗，去掉$符号)
-- amazonClicks: 跳转亚马逊的点击数 (Detail Page Views/Amazon Clicks/Landing Clicks/跳转点击)
-- orders: 订单数/购买数 (Orders/Purchases/转化/订单)
-- commission: 佣金/收入，美元数字 (Commission/Revenue/Amount/佣金，去掉$符号)
-- offer: 产品名或广告活动名称
-- account: 广告账户名或平台名
+每行需要提取以下字段（找不到的返回 null）：
+- impressions: 曝光量/展示次数 (Impressions/曝光/展示)
+- clicks: 广告点击数 (Clicks/点击数)
+- cost: 广告花费美元数字 (Cost/Spend/花费/消耗，去掉$和逗号)
+- amazonClicks: 跳转亚马逊点击数 (Detail Page Views/Amazon Clicks/Landing Clicks/跳转点击)
+- orders: 订单数 (Orders/Purchases/转化/订单)
+- commission: 佣金美元数字 (Commission/Revenue/Amount/佣金，去掉$和逗号)
+- offer: 产品名/广告活动名称/ASIN
+- account: 广告账户名/平台名
 
-只返回 JSON，不要其他文字，格式示例：
-{"impressions":10000,"clicks":179,"cost":25.50,"amazonClicks":137,"orders":0,"commission":0,"offer":"PuroAir","account":"TT_01"}`;
+重要规则：
+1. 必须返回 JSON 数组，即使只有一条数据也要用数组包裹
+2. 截图中有几行数据就返回几个对象，不要遗漏任何一行
+3. 数字去掉所有货币符号和千分位逗号
+4. 只返回 JSON 数组，不要任何其他文字
+
+格式：[{"impressions":10000,"clicks":179,"cost":25.50,"amazonClicks":137,"orders":0,"commission":0,"offer":"PuroAir","account":"TT_01"}]`;
 
       try {
         // Support third-party relay endpoints
@@ -1095,20 +1247,16 @@ ${ocrText}`;
         const rawText = result.content.map(c => c.text || "").join("").trim();
         document.getElementById("ocrResult").textContent = "识别原始返回：\n" + rawText;
 
-        // Parse JSON
+        // Parse JSON – always treat as array
         const clean = rawText.replace(/```json|```/g, "").trim();
         let parsed;
         try { parsed = JSON.parse(clean); }
         catch { showOcrError("AI 返回格式解析失败，请检查截图是否清晰或手动输入"); return; }
 
-        // Fill form fields
-        const fieldMap = {
-          impressions: "f-impr", clicks: "f-clicks", cost: "f-cost",
-          amazonClicks: "f-aclicks", orders: "f-orders", commission: "f-comm",
-          offer: "f-offer", account: "f-account"
-        };
-
-        fillFormFromParsed(parsed);
+        const rows = Array.isArray(parsed) ? parsed : [parsed];
+        showMultiRows(rows);
+        document.getElementById("ocrSuccess").textContent = `✓ 识别到 ${rows.length} 条数据，请在下方核对后保存`;
+        document.getElementById("ocrSuccess").classList.add("visible");
 
       } catch (err) {
         document.getElementById("ocrSpinner").classList.remove("visible");
