@@ -296,21 +296,29 @@
   </div>
 
   <div id="claudeInputArea">
-    <div class="drop-zone" id="dropZone" tabindex="0" onclick="this.focus()" title="点击后可直接 Ctrl+V 粘贴截图">
+    <div class="drop-zone" id="dropZone" tabindex="0" title="点击上传或拖拽截图">
       <input type="file" accept="image/*" id="imgInput" onchange="handleImageSelect(event)">
       <div class="dz-icon">🖼</div>
-      <div class="dz-text" id="dropZoneText">点击选择 / 拖拽 / <kbd style="background:var(--border);padding:1px 5px;border-radius:3px;font-size:11px">Ctrl+V</kbd> 粘贴截图</div>
+      <div class="dz-text" id="dropZoneText">点击选择文件 / 拖拽截图到这里</div>
       <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 广告平台报表、联盟后台数据表格截图均可</div>
-      <div class="paste-hint">✓ 已聚焦 — 现在可以 Ctrl+V 粘贴截图</div>
+      <div style="margin-top:10px;position:relative;z-index:10">
+        <button type="button" onclick="event.stopPropagation();pasteFromClipboard('claude')" class="btn btn-primary" style="padding:7px 18px;font-size:11px">
+          📋 粘贴截图 (Ctrl+V)
+        </button>
+      </div>
     </div>
   </div>
   <div id="deepseekInputArea" style="display:none">
-    <div class="drop-zone" id="dropZoneDS" tabindex="0" onclick="this.focus()" title="点击后可直接 Ctrl+V 粘贴截图">
+    <div class="drop-zone" id="dropZoneDS" tabindex="0" title="点击上传或拖拽截图">
       <input type="file" accept="image/*" id="imgInputDS" onchange="handleImageSelectDS(event)">
       <div class="dz-icon">🐋</div>
-      <div class="dz-text">点击选择 / 拖拽 / <kbd style="background:var(--border);padding:1px 5px;border-radius:3px;font-size:11px">Ctrl+V</kbd> 粘贴截图</div>
+      <div class="dz-text">点击选择文件 / 拖拽截图到这里</div>
       <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; DeepSeek OCR 两步识别</div>
-      <div class="paste-hint">✓ 已聚焦 — 现在可以 Ctrl+V 粘贴截图</div>
+      <div style="margin-top:10px;position:relative;z-index:10">
+        <button type="button" onclick="event.stopPropagation();pasteFromClipboard('deepseek')" class="btn btn-primary" style="padding:7px 18px;font-size:11px;background:var(--accent2)">
+          📋 粘贴截图 (Ctrl+V)
+        </button>
+      </div>
     </div>
   </div>
 
@@ -934,8 +942,34 @@ ${ocrText}`;
     if (file && file.type.startsWith("image/")) processDeepSeekImage(file);
   });
 
-  // ---- Global paste listener: works when drop zone is focused OR anywhere on page ----
-  function handlePasteEvent(e, zone) {
+  // ---- Paste support: button click + global Ctrl+V ----
+
+  // Method 1: Button click → navigator.clipboard API (works on HTTPS, most reliable)
+  async function pasteFromClipboard(provider) {
+    try {
+      const clipItems = await navigator.clipboard.read();
+      for (const item of clipItems) {
+        const imgType = item.types.find(t => t.startsWith("image/"));
+        if (imgType) {
+          const blob = await item.getType(imgType);
+          const file = new File([blob], "paste." + imgType.split("/")[1], { type: imgType });
+          flashZone(provider === "deepseek" ? dzDS : dz);
+          if (provider === "deepseek") processDeepSeekImage(file);
+          else processImage(file);
+          return;
+        }
+      }
+      showToast("剪贴板中没有图片，请先截图", true);
+    } catch(err) {
+      // Fallback: clipboard API denied, tell user to use Ctrl+V directly
+      showToast("请直接按 Ctrl+V 粘贴截图", true);
+    }
+  }
+
+  // Method 2: Global Ctrl+V keyboard paste event (works everywhere on page)
+  function handlePasteEvent(e) {
+    const tag = document.activeElement?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
     const items = e.clipboardData?.items;
     if (!items) return;
     for (const item of items) {
@@ -943,11 +977,9 @@ ${ocrText}`;
         e.preventDefault();
         const file = item.getAsFile();
         if (!file) return;
-        // Flash feedback
-        zone.classList.add("pasted");
-        setTimeout(() => zone.classList.remove("pasted"), 600);
-        // Route to correct processor
         const isDS = document.getElementById("aiProvider").value === "deepseek";
+        const zone = isDS ? dzDS : dz;
+        flashZone(zone);
         if (isDS) processDeepSeekImage(file);
         else processImage(file);
         return;
@@ -955,24 +987,12 @@ ${ocrText}`;
     }
   }
 
-  // Paste on focused drop zone
-  dz.addEventListener("paste",   e => handlePasteEvent(e, dz));
-  dzDS.addEventListener("paste", e => handlePasteEvent(e, dzDS));
+  function flashZone(zone) {
+    zone.classList.add("pasted");
+    setTimeout(() => zone.classList.remove("pasted"), 600);
+  }
 
-  // Global Ctrl+V anywhere on page (when no input is focused)
-  document.addEventListener("paste", e => {
-    const tag = document.activeElement?.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") return; // don't intercept text inputs
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.type.startsWith("image/")) {
-        const activeDz = document.getElementById("aiProvider").value === "deepseek" ? dzDS : dz;
-        handlePasteEvent(e, activeDz);
-        return;
-      }
-    }
-  });
+  document.addEventListener("paste", handlePasteEvent);
 
   function handleImageSelect(e) {
     const file = e.target.files[0];
