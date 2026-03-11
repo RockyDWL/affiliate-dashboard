@@ -226,7 +226,7 @@
       <label>AI 识别引擎</label>
       <select id="aiProvider" onchange="onProviderChange()" style="height:37px">
         <option value="claude">🤖 Claude（支持图片）</option>
-        <option value="deepseek">🐋 DeepSeek Vision（支持图片）</option>
+        <option value="deepseek">🐋 DeepSeek OCR（支持图片）</option>
       </select>
       <div class="key-note" id="providerNote">Claude: 直接上传截图识别</div>
     </div>
@@ -531,7 +531,7 @@
     document.getElementById("claudeInputArea").style.display = isDeepSeek ? "none" : "block";
     document.getElementById("deepseekInputArea").style.display = isDeepSeek ? "block" : "none";
     document.getElementById("providerNote").textContent = isDeepSeek
-      ? "DeepSeek: 上传截图，使用 deepseek-vision 识别"
+      ? "DeepSeek: Step1 OCR提取文字 → Step2 Chat解析JSON"
       : "Claude: 直接上传截图识别";
     document.getElementById("endpointNote").textContent = isDeepSeek
       ? "DeepSeek默认端点: api.deepseek.com/v1/chat/completions"
@@ -541,7 +541,7 @@
       : "Claude: sk-ant-... / 中转Key";
   }
 
-  // DeepSeek Vision image recognition
+  // DeepSeek OCR: Step1 /v1/ocr extract text, Step2 /v1/chat/completions parse JSON
   function handleImageSelectDS(e) {
     const file = e.target.files[0];
     if (file) processDeepSeekImage(file);
@@ -553,78 +553,97 @@
 
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const base64 = e.target.result;
-      document.getElementById("ocrImg").src = base64;
+      const base64Full = e.target.result;
+      document.getElementById("ocrImg").src = base64Full;
       document.getElementById("ocrPreviewRow").classList.add("visible");
-      document.getElementById("ocrResult").textContent = "识别中...";
       document.getElementById("ocrSuccess").classList.remove("visible");
       document.getElementById("ocrError").classList.remove("visible");
       document.getElementById("ocrSpinner").classList.add("visible");
+      document.getElementById("ocrResult").textContent = "Step 1/2：OCR 提取文字中...";
 
       // Compress if enabled
       const shouldCompress = document.getElementById("compressImg").checked;
-      let finalBase64 = base64;
-      let finalMediaType = file.type;
+      let finalBase64 = base64Full;
       if (shouldCompress) {
         try {
-          const compressed = await compressImage(base64, 1200, 0.82);
-          const origKB = Math.round(base64.length * 0.75 / 1024);
+          const compressed = await compressImage(base64Full, 1200, 0.82);
+          const origKB = Math.round(base64Full.length * 0.75 / 1024);
           const newKB  = Math.round(compressed.length * 0.75 / 1024);
           finalBase64 = compressed;
-          finalMediaType = "image/jpeg";
-          document.getElementById("ocrResult").textContent = `图片已压缩: ${origKB}KB → ${newKB}KB，正在识别...`;
-        } catch(e) { /* fallback */ }
+          document.getElementById("ocrResult").textContent = `图片压缩: ${origKB}KB → ${newKB}KB，Step 1/2：OCR 提取文字中...`;
+        } catch(e) { /* fallback to original */ }
       }
 
+      // Strip the data:image/xxx;base64, prefix — OCR API needs raw base64 only
       const imageData = finalBase64.split(",")[1];
       const customEndpoint = document.getElementById("apiEndpoint").value.trim();
-      const endpoint = customEndpoint || "https://api.deepseek.com/v1/chat/completions";
-      const platform = document.getElementById("platformType").value;
-      const platformHint = {
-        auto: "这是一个广告或联盟平台的数据截图",
-        yp: "这是 YP 联盟平台的数据报表截图",
-        meta: "这是 Meta Ads Manager 的数据报表截图",
-        tiktok: "这是 TikTok Ads Manager 的数据报表截图",
-        amazon: "这是 Amazon Associates 后台的数据截图"
-      }[platform];
-
-      const prompt = `${platformHint}。请提取截图中的广告数据，只返回JSON，找不到的字段返回null。
-字段：impressions(曝光), clicks(广告点击数), cost(花费美元,去掉$), amazonClicks(跳转亚马逊点击/Detail Page Views), orders(订单数), commission(佣金美元,去掉$), offer(产品名), account(账户名)
-格式：{"impressions":null,"clicks":null,"cost":null,"amazonClicks":null,"orders":null,"commission":null,"offer":null,"account":null}`;
+      // Build OCR endpoint: if user provides a custom base URL, swap path; else use official
+      const ocrEndpoint  = customEndpoint ? customEndpoint.replace(/\/v1.*$/, "/v1/ocr") : "https://api.deepseek.com/v1/ocr";
+      const chatEndpoint = customEndpoint ? customEndpoint.replace(/\/v1.*$/, "/v1/chat/completions") : "https://api.deepseek.com/v1/chat/completions";
+      const headers = { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey };
 
       try {
-        const response = await fetch(endpoint, {
+        // ── Step 1: OCR — extract raw text from image ──
+        const ocrResp = await fetch(ocrEndpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
+          headers,
+          body: JSON.stringify({ image: imageData, language: "chinese+english" })
+        });
+
+        if (!ocrResp.ok) {
+          const err = await ocrResp.json().catch(() => ({}));
+          showOcrError("DeepSeek OCR 错误: " + (err.error?.message || ocrResp.status)); return;
+        }
+
+        const ocrResult = await ocrResp.json();
+        const ocrText = ocrResult.text || "";
+        document.getElementById("ocrResult").textContent = "Step 1 OCR 结果：\n" + ocrText + "\n\nStep 2/2：解析数据中...";
+
+        // ── Step 2: Chat — parse OCR text into structured JSON ──
+        const platform = document.getElementById("platformType").value;
+        const platformHint = {
+          auto: "广告或联盟平台数据",
+          yp: "YP 联盟平台数据",
+          meta: "Meta Ads Manager 数据",
+          tiktok: "TikTok Ads 数据",
+          amazon: "Amazon Associates 数据"
+        }[platform];
+
+        const prompt = `以下是从${platformHint}截图中 OCR 提取的文字，请提取广告数据，只返回 JSON，找不到的字段返回 null。
+字段：impressions(曝光), clicks(广告点击数), cost(花费美元数字,去掉$), amazonClicks(跳转亚马逊/Detail Page Views), orders(订单数), commission(佣金美元数字,去掉$), offer(产品名), account(账户名)
+只返回JSON，不要其他文字：{"impressions":null,"clicks":null,"cost":null,"amazonClicks":null,"orders":null,"commission":null,"offer":null,"account":null}
+
+OCR文字：
+${ocrText}`;
+
+        const chatResp = await fetch(chatEndpoint, {
+          method: "POST",
+          headers,
           body: JSON.stringify({
-            model: "deepseek-vision",
+            model: "deepseek-chat",
             max_tokens: 500,
-            messages: [{
-              role: "user",
-              content: [
-                { type: "image_url", image_url: { url: `data:${finalMediaType};base64,${imageData}` } },
-                { type: "text", text: prompt }
-              ]
-            }]
+            messages: [{ role: "user", content: prompt }]
           })
         });
 
         document.getElementById("ocrSpinner").classList.remove("visible");
-        if (!response.ok) {
-          const err = await response.json();
-          showOcrError("DeepSeek API 错误: " + (err.error?.message || response.status)); return;
+        if (!chatResp.ok) {
+          const err = await chatResp.json().catch(() => ({}));
+          showOcrError("DeepSeek Chat 错误: " + (err.error?.message || chatResp.status)); return;
         }
 
-        const result = await response.json();
-        const rawText = result.choices?.[0]?.message?.content?.trim() || "";
-        document.getElementById("ocrResult").textContent = "DeepSeek 返回：\n" + rawText;
+        const chatResult = await chatResp.json();
+        const rawJson = chatResult.choices?.[0]?.message?.content?.trim() || "";
+        document.getElementById("ocrResult").textContent =
+          "Step 1 OCR 文字：\n" + ocrText + "\n\nStep 2 解析 JSON：\n" + rawJson;
 
-        const clean = rawText.replace(/```json|```/g,"").trim();
+        const clean = rawJson.replace(/```json|```/g, "").trim();
         let parsed;
         try { parsed = JSON.parse(clean); }
-        catch { showOcrError("解析失败，请检查截图是否清晰"); return; }
+        catch { showOcrError("JSON 解析失败，OCR 文字可能不完整，可尝试手动输入"); return; }
 
         fillFormFromParsed(parsed);
+
       } catch(err) {
         document.getElementById("ocrSpinner").classList.remove("visible");
         showOcrError("请求失败: " + err.message);
