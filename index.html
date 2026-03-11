@@ -50,12 +50,18 @@
     border: 2px dashed var(--border); border-radius: 8px; padding: 28px;
     text-align: center; cursor: pointer; transition: all 0.2s;
     position: relative; background: var(--bg);
+    outline: none;
   }
   .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent2); background: rgba(61,139,255,0.05); }
+  .drop-zone:focus, .drop-zone.paste-ready { border-color: var(--accent); background: rgba(0,229,160,0.04); box-shadow: 0 0 0 3px rgba(0,229,160,0.12); }
+  .drop-zone.pasted { border-color: var(--accent); background: rgba(0,229,160,0.08); animation: flash 0.4s ease; }
+  @keyframes flash { 0%,100%{background:rgba(0,229,160,0.08)} 50%{background:rgba(0,229,160,0.22)} }
   .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
   .dz-icon { font-size: 28px; margin-bottom: 6px; }
   .dz-text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); }
   .dz-sub { font-size: 11px; color: var(--muted); margin-top: 4px; opacity: 0.6; }
+  .paste-hint { font-size: 11px; color: var(--accent); margin-top: 6px; font-family: 'IBM Plex Mono', monospace; opacity: 0; transition: opacity 0.2s; }
+  .drop-zone:focus .paste-hint, .drop-zone.paste-ready .paste-hint { opacity: 1; }
 
   .ocr-spinner { display: none; align-items: center; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); margin-top: 14px; }
   .ocr-spinner.visible { display: flex; }
@@ -251,6 +257,7 @@
         <option value="meta">Meta Ads Manager</option>
         <option value="tiktok">TikTok Ads</option>
         <option value="amazon">Amazon Associates</option>
+        <option value="google">Google Ads</option>
       </select>
     </div>
   </div>
@@ -263,20 +270,47 @@
     <label class="security-toggle"><input type="checkbox" id="compressImg" checked> 上传前压缩截图（推荐）</label>
   </div>
 
+  <!-- Merge Mode Toggle -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+    <label class="security-toggle" style="gap:8px">
+      <input type="checkbox" id="mergeMode" onchange="onMergeModeChange()" style="accent-color:var(--accent2);width:14px;height:14px">
+      <span style="color:var(--text);font-size:12px;font-family:'IBM Plex Mono',monospace">
+        🔗 多图合并模式
+      </span>
+    </label>
+    <span id="mergeModeNote" style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace">
+      关闭：每张截图独立填入表单 &nbsp;|&nbsp; 开启：多张截图数据合并为一条记录
+    </span>
+  </div>
+
+  <!-- Merge progress indicator (shown when mergeMode ON) -->
+  <div id="mergeProgress" style="display:none;margin-bottom:12px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:8px">
+      已识别字段（点击字段可清除）：
+    </div>
+    <div id="mergeFields" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="clearMergeBuffer()" style="font-size:10px;padding:6px 12px">✕ 清空合并缓存</button>
+      <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;align-self:center">上传下一张截图继续追加识别</span>
+    </div>
+  </div>
+
   <div id="claudeInputArea">
-    <div class="drop-zone" id="dropZone">
+    <div class="drop-zone" id="dropZone" tabindex="0" onclick="this.focus()" title="点击后可直接 Ctrl+V 粘贴截图">
       <input type="file" accept="image/*" id="imgInput" onchange="handleImageSelect(event)">
       <div class="dz-icon">🖼</div>
-      <div class="dz-text">点击选择 / 拖拽截图到这里</div>
+      <div class="dz-text" id="dropZoneText">点击选择 / 拖拽 / <kbd style="background:var(--border);padding:1px 5px;border-radius:3px;font-size:11px">Ctrl+V</kbd> 粘贴截图</div>
       <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 广告平台报表、联盟后台数据表格截图均可</div>
+      <div class="paste-hint">✓ 已聚焦 — 现在可以 Ctrl+V 粘贴截图</div>
     </div>
   </div>
   <div id="deepseekInputArea" style="display:none">
-    <div class="drop-zone" id="dropZoneDS">
+    <div class="drop-zone" id="dropZoneDS" tabindex="0" onclick="this.focus()" title="点击后可直接 Ctrl+V 粘贴截图">
       <input type="file" accept="image/*" id="imgInputDS" onchange="handleImageSelectDS(event)">
       <div class="dz-icon">🐋</div>
-      <div class="dz-text">点击选择 / 拖拽截图到这里（DeepSeek Vision）</div>
-      <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 使用 deepseek-vision 模型识别</div>
+      <div class="dz-text">点击选择 / 拖拽 / <kbd style="background:var(--border);padding:1px 5px;border-radius:3px;font-size:11px">Ctrl+V</kbd> 粘贴截图</div>
+      <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; DeepSeek OCR 两步识别</div>
+      <div class="paste-hint">✓ 已聚焦 — 现在可以 Ctrl+V 粘贴截图</div>
     </div>
   </div>
 
@@ -606,7 +640,8 @@
           yp: "YP 联盟平台数据",
           meta: "Meta Ads Manager 数据",
           tiktok: "TikTok Ads 数据",
-          amazon: "Amazon Associates 数据"
+          amazon: "Amazon Associates 数据",
+          google: "Google Ads 广告数据"
         }[platform];
 
         const prompt = `以下是从${platformHint}截图中 OCR 提取的文字，请提取广告数据，只返回 JSON，找不到的字段返回 null。
@@ -652,26 +687,130 @@ ${ocrText}`;
     reader.readAsDataURL(file);
   }
 
+  // ---- Merge buffer (for multi-image merge mode) ----
+  let mergeBuffer = {};
+
+  function onMergeModeChange() {
+    const on = document.getElementById("mergeMode").checked;
+    document.getElementById("mergeProgress").style.display = on ? "block" : "none";
+    document.getElementById("mergeModeNote").textContent = on
+      ? "开启：多张截图数据将合并为一条记录，字段不覆盖已有值"
+      : "关闭：每张截图独立填入表单";
+    document.getElementById("dropZoneText").textContent = on
+      ? "上传截图 1：广告平台（Impressions / Clicks / Cost）"
+      : "点击选择 / 拖拽截图到这里";
+    if (!on) { mergeBuffer = {}; renderMergeFields(); }
+  }
+
+  function renderMergeFields() {
+    const fieldLabels = {
+      impressions:"Impressions", clicks:"Clicks", cost:"Cost",
+      amazonClicks:"AZ Clicks", orders:"Orders", commission:"Commission",
+      offer:"Offer", account:"Account"
+    };
+    const container = document.getElementById("mergeFields");
+    container.innerHTML = "";
+    const keys = Object.keys(mergeBuffer);
+    if (keys.length === 0) {
+      container.innerHTML = "<span style='font-family:IBM Plex Mono,monospace;font-size:11px;color:var(--muted)'>暂无数据</span>";
+      return;
+    }
+    keys.forEach(k => {
+      const tag = document.createElement("span");
+      tag.style.cssText = "display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:rgba(61,139,255,0.15);border:1px solid rgba(61,139,255,0.3);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent2);cursor:pointer";
+      tag.title = "点击清除此字段";
+      tag.innerHTML = `${fieldLabels[k]||k}: <strong>${mergeBuffer[k]}</strong> <span style="opacity:0.6;margin-left:2px">✕</span>`;
+      tag.onclick = () => { delete mergeBuffer[k]; renderMergeFields(); };
+      container.appendChild(tag);
+    });
+    // Update drop zone hint based on what's missing
+    const adFields = ["impressions","clicks","cost"];
+    const ypFields = ["amazonClicks","orders","commission"];
+    const hasAd = adFields.some(f => mergeBuffer[f] != null);
+    const hasYP = ypFields.some(f => mergeBuffer[f] != null);
+    const dzt = document.getElementById("dropZoneText");
+    if (dzt) {
+      if (!hasAd && !hasYP) dzt.textContent = "上传截图 1：广告平台（Impressions / Clicks / Cost）";
+      else if (hasAd && !hasYP) dzt.textContent = "✓ 广告数据已获取 → 上传截图 2：YP联盟（AZ Clicks / Orders / Commission）";
+      else if (!hasAd && hasYP) dzt.textContent = "✓ YP数据已获取 → 上传截图 2：广告平台（Impressions / Clicks / Cost）";
+      else dzt.textContent = "✓ 数据已完整！可继续追加或点击 Save Record 保存";
+    }
+  }
+
+  function clearMergeBuffer() {
+    mergeBuffer = {};
+    renderMergeFields();
+    document.getElementById("dropZoneText").textContent = "上传截图 1：广告平台（Impressions / Clicks / Cost）";
+    showToast("合并缓存已清空");
+  }
+
   function fillFormFromParsed(parsed) {
     const fieldMap = {
       impressions:"f-impr", clicks:"f-clicks", cost:"f-cost",
       amazonClicks:"f-aclicks", orders:"f-orders", commission:"f-comm",
       offer:"f-offer", account:"f-account"
     };
+    const mergeOn = document.getElementById("mergeMode").checked;
     const filled = [];
+
     for (const [key, id] of Object.entries(fieldMap)) {
-      if (parsed[key] !== null && parsed[key] !== undefined && parsed[key] !== "") {
+      const val = parsed[key];
+      if (val === null || val === undefined || val === "") continue;
+
+      if (mergeOn) {
+        // Merge mode: only write to buffer+form if field not already captured
+        if (mergeBuffer[key] == null) {
+          mergeBuffer[key] = val;
+          const el = document.getElementById(id);
+          el.value = val;
+          el.classList.add("ai-filled");
+          setTimeout(() => el.classList.remove("ai-filled"), 3000);
+          filled.push(key);
+        }
+      } else {
+        // Normal mode: always overwrite
         const el = document.getElementById(id);
-        el.value = parsed[key];
+        el.value = val;
         el.classList.add("ai-filled");
         setTimeout(() => el.classList.remove("ai-filled"), 3000);
         filled.push(key);
       }
     }
+
     if (!document.getElementById("f-date").value) document.getElementById("f-date").value = today;
     calcPreview();
-    const successMsg = `✓ 解析成功！已填入 ${filled.length} 个字段：${filled.join(", ")}
-请核对后点击 Save Record 保存。`;
+    renderMergeFields();
+
+    // Check completeness in merge mode
+    const adFields = ["impressions","clicks","cost"];
+    const ypFields = ["amazonClicks","orders","commission"];
+    const hasAd = adFields.every(f => mergeBuffer[f] != null);
+    const hasYP = ypFields.every(f => mergeBuffer[f] != null);
+    let successMsg = `✓ 识别成功！本次填入 ${filled.length} 个字段：${filled.join(", ")}`;
+    if (mergeOn) {
+      if (filled.length === 0) {
+        successMsg = "⚠ 本次未识别到新字段（已有字段不覆盖）";
+      } else if (hasAd && hasYP) {
+        successMsg += "
+
+🎉 广告数据 + 联盟数据已全部就绪，请核对后点击 Save Record 保存！";
+      } else if (hasAd) {
+        successMsg += "
+
+→ 广告数据已完整，请继续上传 YP 联盟截图获取 AZ Clicks / Orders / Commission";
+      } else if (hasYP) {
+        successMsg += "
+
+→ 联盟数据已完整，请继续上传广告平台截图获取 Impressions / Clicks / Cost";
+      } else {
+        successMsg += "
+
+→ 请继续上传另一平台截图补充剩余字段";
+      }
+    } else {
+      successMsg += "
+请核对数据后点击 Save Record 保存。";
+    }
     document.getElementById("ocrSuccess").textContent = successMsg;
     document.getElementById("ocrSuccess").classList.add("visible");
   }
@@ -795,6 +934,46 @@ ${ocrText}`;
     if (file && file.type.startsWith("image/")) processDeepSeekImage(file);
   });
 
+  // ---- Global paste listener: works when drop zone is focused OR anywhere on page ----
+  function handlePasteEvent(e, zone) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) return;
+        // Flash feedback
+        zone.classList.add("pasted");
+        setTimeout(() => zone.classList.remove("pasted"), 600);
+        // Route to correct processor
+        const isDS = document.getElementById("aiProvider").value === "deepseek";
+        if (isDS) processDeepSeekImage(file);
+        else processImage(file);
+        return;
+      }
+    }
+  }
+
+  // Paste on focused drop zone
+  dz.addEventListener("paste",   e => handlePasteEvent(e, dz));
+  dzDS.addEventListener("paste", e => handlePasteEvent(e, dzDS));
+
+  // Global Ctrl+V anywhere on page (when no input is focused)
+  document.addEventListener("paste", e => {
+    const tag = document.activeElement?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return; // don't intercept text inputs
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const activeDz = document.getElementById("aiProvider").value === "deepseek" ? dzDS : dz;
+        handlePasteEvent(e, activeDz);
+        return;
+      }
+    }
+  });
+
   function handleImageSelect(e) {
     const file = e.target.files[0];
     if (file) processImage(file);
@@ -844,7 +1023,8 @@ ${ocrText}`;
         yp: "这是 YP 联盟平台（影响力营销/联盟营销平台）的数据报表截图",
         meta: "这是 Meta Ads Manager（Facebook/Instagram 广告）的数据报表截图",
         tiktok: "这是 TikTok Ads Manager 的数据报表截图",
-        amazon: "这是 Amazon Associates（亚马逊联盟）后台的数据截图"
+        amazon: "这是 Amazon Associates（亚马逊联盟）后台的数据截图",
+        google: "这是 Google Ads 广告后台的数据报表截图，包含展示次数、点击次数、费用等数据"
       }[platform];
 
       const prompt = `${platformHint}。
