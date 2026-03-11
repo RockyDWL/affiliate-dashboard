@@ -226,7 +226,7 @@
       <label>AI 识别引擎</label>
       <select id="aiProvider" onchange="onProviderChange()" style="height:37px">
         <option value="claude">🤖 Claude（支持图片）</option>
-        <option value="deepseek">🐋 DeepSeek（文字数据）</option>
+        <option value="deepseek">🐋 DeepSeek Vision（支持图片）</option>
       </select>
       <div class="key-note" id="providerNote">Claude: 直接上传截图识别</div>
     </div>
@@ -272,12 +272,11 @@
     </div>
   </div>
   <div id="deepseekInputArea" style="display:none">
-    <div style="margin-bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">
-      📋 将广告平台数据<strong style="color:var(--text)">复制粘贴</strong>到下方文本框，DeepSeek 将解析并填入表单
-    </div>
-    <textarea id="deepseekText" rows="6" placeholder="粘贴数据到这里，例如：&#10;Date: 2025-01-15&#10;Impressions: 50000&#10;Clicks: 320&#10;Cost: $45.20&#10;Amazon Clicks: 198&#10;Orders: 3&#10;Commission: $28.50" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;resize:vertical;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-    <div style="margin-top:8px">
-      <button class="btn btn-primary" onclick="processDeepSeekText()" style="font-size:11px;padding:8px 18px">🐋 DeepSeek 解析数据</button>
+    <div class="drop-zone" id="dropZoneDS">
+      <input type="file" accept="image/*" id="imgInputDS" onchange="handleImageSelectDS(event)">
+      <div class="dz-icon">🐋</div>
+      <div class="dz-text">点击选择 / 拖拽截图到这里（DeepSeek Vision）</div>
+      <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 使用 deepseek-vision 模型识别</div>
     </div>
   </div>
 
@@ -364,8 +363,29 @@
   // ============================================================
   let data = [];
   let maskEnabled = false;
-  let storageMode = localStorage.getItem("storageMode") || "localstorage";
   const DB_KEY = "affiliateData_v2";
+
+  // Safe storage wrapper - falls back to memory if localStorage is unavailable (e.g. preview environments)
+  const _memStore = {};
+  const SafeStorage = {
+    get(key) {
+      try { return localStorage.getItem(key); } catch(e) {
+        try { return sessionStorage.getItem(key); } catch(e2) { return _memStore[key] ?? null; }
+      }
+    },
+    set(key, val) {
+      try { localStorage.setItem(key, val); } catch(e) {
+        try { sessionStorage.setItem(key, val); } catch(e2) { _memStore[key] = val; }
+      }
+    },
+    remove(key) {
+      try { localStorage.removeItem(key); } catch(e) {
+        try { sessionStorage.removeItem(key); } catch(e2) { delete _memStore[key]; }
+      }
+    }
+  };
+
+  let storageMode = SafeStorage.get("storageMode") || "localstorage";
 
   // ============================================================
   // INDEXED DB
@@ -406,13 +426,13 @@
   async function loadData() {
     try {
       if (storageMode === "localstorage") {
-        data = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
+        data = JSON.parse(SafeStorage.get(DB_KEY) || "[]");
       } else if (storageMode === "sessionstorage") {
-        data = JSON.parse(sessionStorage.getItem(DB_KEY) || "[]");
+        data = JSON.parse(SafeStorage.get(DB_KEY+"_ss") || "[]");
       } else if (storageMode === "indexeddb") {
         data = await idbGetAll();
       } else if (storageMode === "file") {
-        data = JSON.parse(sessionStorage.getItem(DB_KEY+"_file") || "[]");
+        data = JSON.parse(SafeStorage.get(DB_KEY+"_file") || "[]");
       }
     } catch(e) { data = []; }
   }
@@ -420,14 +440,14 @@
   async function save() {
     try {
       if (storageMode === "localstorage") {
-        localStorage.setItem(DB_KEY, JSON.stringify(data));
+        SafeStorage.set(DB_KEY, JSON.stringify(data));
       } else if (storageMode === "sessionstorage") {
-        sessionStorage.setItem(DB_KEY, JSON.stringify(data));
+        SafeStorage.set(DB_KEY+"_ss", JSON.stringify(data));
       } else if (storageMode === "indexeddb") {
         await idbSaveAll(data);
       } else if (storageMode === "file") {
         // file mode: keep in session memory + auto-download on every save
-        sessionStorage.setItem(DB_KEY+"_file", JSON.stringify(data));
+        SafeStorage.set(DB_KEY+"_file", JSON.stringify(data));
         downloadJSON(data, "affiliate_autosave_"+today+".json");
         showToast("💾 已自动下载到本地文件");
       }
@@ -439,7 +459,7 @@
     // Migrate data to new storage
     const oldData = [...data];
     storageMode = mode;
-    localStorage.setItem("storageMode", mode);
+    SafeStorage.set("storageMode", mode);
     // Update UI
     ["localstorage","sessionstorage","indexeddb","file"].forEach(m => {
       document.getElementById("opt-"+m).classList.toggle("active", m === mode);
@@ -458,13 +478,13 @@
     document.getElementById("st-count").textContent = data.length;
     let sizeStr = "—";
     if (storageMode === "localstorage") {
-      const raw = localStorage.getItem(DB_KEY) || "";
+      const raw = SafeStorage.get(DB_KEY) || "";
       sizeStr = (raw.length / 1024).toFixed(1) + " KB";
     } else if (storageMode === "sessionstorage") {
-      const raw = sessionStorage.getItem(DB_KEY) || "";
+      const raw = SafeStorage.get(DB_KEY+"_ss") || "";
       sizeStr = (raw.length / 1024).toFixed(1) + " KB";
     } else if (storageMode === "file") {
-      const raw = sessionStorage.getItem(DB_KEY+"_file") || "";
+      const raw = SafeStorage.get(DB_KEY+"_file") || "";
       sizeStr = (raw.length / 1024).toFixed(1) + " KB (内存)";
     } else {
       sizeStr = "IndexedDB";
@@ -511,70 +531,106 @@
     document.getElementById("claudeInputArea").style.display = isDeepSeek ? "none" : "block";
     document.getElementById("deepseekInputArea").style.display = isDeepSeek ? "block" : "none";
     document.getElementById("providerNote").textContent = isDeepSeek
-      ? "DeepSeek: 粘贴文字数据解析（不支持图片）"
+      ? "DeepSeek: 上传截图，使用 deepseek-vision 识别"
       : "Claude: 直接上传截图识别";
     document.getElementById("endpointNote").textContent = isDeepSeek
-      ? "DeepSeek默认: api.deepseek.com/v1/chat/completions"
+      ? "DeepSeek默认端点: api.deepseek.com/v1/chat/completions"
       : "Claude官方: api.anthropic.com | 中转: 填自定义地址";
     document.getElementById("apiKey").placeholder = isDeepSeek
       ? "DeepSeek API Key: sk-..."
       : "Claude: sk-ant-... / 中转Key";
   }
 
-  // DeepSeek text parsing
-  async function processDeepSeekText() {
+  // DeepSeek Vision image recognition
+  function handleImageSelectDS(e) {
+    const file = e.target.files[0];
+    if (file) processDeepSeekImage(file);
+  }
+
+  async function processDeepSeekImage(file) {
     const apiKey = document.getElementById("apiKey").value.trim();
     if (!apiKey) { showOcrError("请先填写 DeepSeek API Key"); return; }
-    const text = document.getElementById("deepseekText").value.trim();
-    if (!text) { showOcrError("请先粘贴数据到文本框"); return; }
 
-    document.getElementById("ocrSpinner").classList.add("visible");
-    document.getElementById("ocrSuccess").classList.remove("visible");
-    document.getElementById("ocrError").classList.remove("visible");
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result;
+      document.getElementById("ocrImg").src = base64;
+      document.getElementById("ocrPreviewRow").classList.add("visible");
+      document.getElementById("ocrResult").textContent = "识别中...";
+      document.getElementById("ocrSuccess").classList.remove("visible");
+      document.getElementById("ocrError").classList.remove("visible");
+      document.getElementById("ocrSpinner").classList.add("visible");
 
-    const customEndpoint = document.getElementById("apiEndpoint").value.trim();
-    const endpoint = customEndpoint || "https://api.deepseek.com/v1/chat/completions";
-
-    const prompt = `从以下广告数据文本中提取数字，以JSON格式返回，找不到的字段返回null。
-字段：impressions(曝光), clicks(广告点击), cost(花费,去掉$), amazonClicks(跳转亚马逊/Detail Page Views), orders(订单), commission(佣金,去掉$), offer(产品名), account(账户名)
-只返回JSON：{"impressions":null,"clicks":null,"cost":null,"amazonClicks":null,"orders":null,"commission":null,"offer":null,"account":null}
-
-数据：
-${text}`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          max_tokens: 500,
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
-
-      document.getElementById("ocrSpinner").classList.remove("visible");
-      if (!response.ok) {
-        const err = await response.json();
-        showOcrError("DeepSeek API 错误: " + (err.error?.message || response.status)); return;
+      // Compress if enabled
+      const shouldCompress = document.getElementById("compressImg").checked;
+      let finalBase64 = base64;
+      let finalMediaType = file.type;
+      if (shouldCompress) {
+        try {
+          const compressed = await compressImage(base64, 1200, 0.82);
+          const origKB = Math.round(base64.length * 0.75 / 1024);
+          const newKB  = Math.round(compressed.length * 0.75 / 1024);
+          finalBase64 = compressed;
+          finalMediaType = "image/jpeg";
+          document.getElementById("ocrResult").textContent = `图片已压缩: ${origKB}KB → ${newKB}KB，正在识别...`;
+        } catch(e) { /* fallback */ }
       }
 
-      const result = await response.json();
-      const rawText = result.choices?.[0]?.message?.content?.trim() || "";
-      document.getElementById("ocrPreviewRow").classList.add("visible");
-      document.getElementById("ocrResult").textContent = "DeepSeek 返回：
-" + rawText;
+      const imageData = finalBase64.split(",")[1];
+      const customEndpoint = document.getElementById("apiEndpoint").value.trim();
+      const endpoint = customEndpoint || "https://api.deepseek.com/v1/chat/completions";
+      const platform = document.getElementById("platformType").value;
+      const platformHint = {
+        auto: "这是一个广告或联盟平台的数据截图",
+        yp: "这是 YP 联盟平台的数据报表截图",
+        meta: "这是 Meta Ads Manager 的数据报表截图",
+        tiktok: "这是 TikTok Ads Manager 的数据报表截图",
+        amazon: "这是 Amazon Associates 后台的数据截图"
+      }[platform];
 
-      const clean = rawText.replace(/```json|```/g,"").trim();
-      let parsed;
-      try { parsed = JSON.parse(clean); }
-      catch { showOcrError("解析失败，请检查粘贴的数据格式"); return; }
+      const prompt = `${platformHint}。请提取截图中的广告数据，只返回JSON，找不到的字段返回null。
+字段：impressions(曝光), clicks(广告点击数), cost(花费美元,去掉$), amazonClicks(跳转亚马逊点击/Detail Page Views), orders(订单数), commission(佣金美元,去掉$), offer(产品名), account(账户名)
+格式：{"impressions":null,"clicks":null,"cost":null,"amazonClicks":null,"orders":null,"commission":null,"offer":null,"account":null}`;
 
-      fillFormFromParsed(parsed);
-    } catch(err) {
-      document.getElementById("ocrSpinner").classList.remove("visible");
-      showOcrError("请求失败: " + err.message);
-    }
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
+          body: JSON.stringify({
+            model: "deepseek-vision",
+            max_tokens: 500,
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image_url", image_url: { url: `data:${finalMediaType};base64,${imageData}` } },
+                { type: "text", text: prompt }
+              ]
+            }]
+          })
+        });
+
+        document.getElementById("ocrSpinner").classList.remove("visible");
+        if (!response.ok) {
+          const err = await response.json();
+          showOcrError("DeepSeek API 错误: " + (err.error?.message || response.status)); return;
+        }
+
+        const result = await response.json();
+        const rawText = result.choices?.[0]?.message?.content?.trim() || "";
+        document.getElementById("ocrResult").textContent = "DeepSeek 返回：\n" + rawText;
+
+        const clean = rawText.replace(/```json|```/g,"").trim();
+        let parsed;
+        try { parsed = JSON.parse(clean); }
+        catch { showOcrError("解析失败，请检查截图是否清晰"); return; }
+
+        fillFormFromParsed(parsed);
+      } catch(err) {
+        document.getElementById("ocrSpinner").classList.remove("visible");
+        showOcrError("请求失败: " + err.message);
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   function fillFormFromParsed(parsed) {
@@ -628,13 +684,13 @@ ${text}`;
   document.getElementById("f-date").value = today;
 
   // Restore API settings
-  const savedKey      = deobfuscate(localStorage.getItem("adk") || sessionStorage.getItem("adk") || "");
-  const savedEndpoint = localStorage.getItem("anthropicEndpoint") || "";
-  const sessionOnly   = localStorage.getItem("sessionOnly") === "1";
+  const savedKey      = deobfuscate(SafeStorage.get("adk") || "");
+  const savedEndpoint = SafeStorage.get("anthropicEndpoint") || "";
+  const sessionOnly   = SafeStorage.get("sessionOnly") === "1";
   if (savedKey)      document.getElementById("apiKey").value = savedKey;
   if (savedEndpoint) document.getElementById("apiEndpoint").value = savedEndpoint;
   if (sessionOnly)   document.getElementById("sessionOnly").checked = true;
-  if (localStorage.getItem("compressImg") === "0") document.getElementById("compressImg").checked = false;
+  if (SafeStorage.get("compressImg") === "0") document.getElementById("compressImg").checked = false;
 
   // Restore storage mode UI
   ["localstorage","sessionstorage","indexeddb","file"].forEach(m => {
@@ -651,18 +707,18 @@ ${text}`;
     const endpoint = document.getElementById("apiEndpoint").value.trim();
     const sessOnly = document.getElementById("sessionOnly").checked;
 
-    localStorage.setItem("anthropicEndpoint", endpoint);
-    localStorage.setItem("sessionOnly", sessOnly ? "1" : "0");
-    localStorage.setItem("compressImg", document.getElementById("compressImg").checked ? "1" : "0");
+    SafeStorage.set("anthropicEndpoint", endpoint);
+    SafeStorage.set("sessionOnly", sessOnly ? "1" : "0");
+    SafeStorage.set("compressImg", document.getElementById("compressImg").checked ? "1" : "0");
 
     const obfKey = obfuscate(key);
     if (sessOnly) {
       // store only in sessionStorage (cleared when tab closes)
-      sessionStorage.setItem("adk", obfKey);
-      localStorage.removeItem("adk");
+      SafeStorage.set("adk", obfKey);
+      SafeStorage.remove("adk");
     } else {
-      localStorage.setItem("adk", obfKey);
-      sessionStorage.removeItem("adk");
+      SafeStorage.set("adk", obfKey);
+      SafeStorage.remove("adk");
     }
     updateSecStatus();
   }
@@ -670,8 +726,8 @@ ${text}`;
   function clearKey() {
     if (!confirm("确认清除已保存的 API Key？")) return;
     document.getElementById("apiKey").value = "";
-    localStorage.removeItem("adk");
-    sessionStorage.removeItem("adk");
+    SafeStorage.remove("adk");
+    SafeStorage.remove("adk");
     updateSecStatus();
     showToast("✓ API Key 已清除");
   }
@@ -709,6 +765,15 @@ ${text}`;
     e.preventDefault(); dz.classList.remove("dragover");
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) processImage(file);
+  });
+
+  const dzDS = document.getElementById("dropZoneDS");
+  dzDS.addEventListener("dragover", e => { e.preventDefault(); dzDS.classList.add("dragover"); });
+  dzDS.addEventListener("dragleave", () => dzDS.classList.remove("dragover"));
+  dzDS.addEventListener("drop", e => {
+    e.preventDefault(); dzDS.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) processDeepSeekImage(file);
   });
 
   function handleImageSelect(e) {
@@ -1015,7 +1080,7 @@ ${text}`;
   // ---- Auto-clear key on tab close if sessionOnly ----
   window.addEventListener("beforeunload", () => {
     if (document.getElementById("sessionOnly").checked) {
-      sessionStorage.removeItem("adk");
+      SafeStorage.remove("adk");
     }
   });
 
