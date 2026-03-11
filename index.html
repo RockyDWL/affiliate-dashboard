@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Affiliate Ads Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h1>Affiliate Ads Dashboard</h1>
+
+<div class="form">
+
+<h2>Add Data</h2>
+
+<input id="date" type="date">
+
+<input id="account" placeholder="Ads Account">
+
+<input id="offer" placeholder="Offer">
+
+<input id="impressions" type="number" placeholder="Impressions">
+
+<input id="clicks" type="number" placeholder="Clicks">
+
+<input id="cost" type="number" placeholder="Cost">
+
+<input id="amazonClicks" type="number" placeholder="Amazon Clicks">
+
+<input id="orders" type="number" placeholder="Orders">
+
+<input id="commission" type="number" placeholder="Commission">
+
+<button onclick="addData()">Save</button>
+
+</div>
+
+<h2>Offer Data</h2>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Date</th>
+<th>Account</th>
+<th>Offer</th>
+<th>Clicks</th>
+<th>Cost</th>
+<th>Orders</th>
+<th>Commission</th>
+<th>CPC</th>
+<th>EPC</th>
+<th>Profit</th>
+<th>Status</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+
+<script src="script.js"></script>
+
+</body>
+</html>
