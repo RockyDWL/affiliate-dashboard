@@ -7,201 +7,91 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0f14;
-    --surface: #161920;
-    --border: #252830;
-    --accent: #00e5a0;
-    --accent2: #3d8bff;
-    --warn: #ff9500;
-    --danger: #ff3b5c;
-    --text: #e8eaf0;
-    --muted: #5a6070;
-    --win: #00e5a0;
-    --kill: #ff3b5c;
-    --break: #ff9500;
+    --bg: #0d0f14; --surface: #161920; --border: #252830;
+    --accent: #00e5a0; --accent2: #3d8bff; --warn: #ff9500;
+    --danger: #ff3b5c; --text: #e8eaf0; --muted: #5a6070;
+    --win: #00e5a0; --kill: #ff3b5c; --break: #ff9500;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'IBM Plex Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 32px;
-  }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 32px; }
 
   /* Header */
-  .header {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    margin-bottom: 40px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 20px;
-  }
-  .header h1 {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-  .header span {
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-  }
+  .header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+  .header h1 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; }
+  .header span { font-size: 12px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 
   /* Summary Cards */
-  .summary {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    margin-bottom: 32px;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 16px;
-  }
-  .card .label {
-    font-size: 10px;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 8px;
-  }
-  .card .value {
-    font-size: 22px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .card .sub {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
+  .summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 28px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; }
+  .card .label { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .card .value { font-size: 22px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--text); }
+  .card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
   .card.good .value { color: var(--win); }
   .card.bad .value { color: var(--kill); }
-  .card.warn .value { color: var(--warn); }
 
-  /* Form Section */
-  .form-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 32px;
-  }
-  .form-section h2 {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 20px;
-  }
+  /* Shared section styles */
+  .section-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+  .section-box h2 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 18px; }
 
-  /* Input layout: 输入原始数据 / 自动计算提示 */
-  .input-hint {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 20px;
+  /* OCR */
+  .ocr-top { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+  .ocr-field { display: flex; flex-direction: column; gap: 4px; }
+  .ocr-field label { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ocr-field input, .ocr-field select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text); padding: 8px 10px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; outline: none; transition: border-color 0.2s;
   }
-  .input-group h3 {
-    font-size: 11px;
-    color: var(--accent2);
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 12px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-  }
-  .auto-group h3 {
-    font-size: 11px;
-    color: var(--accent);
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 12px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-  }
+  .ocr-field input:focus, .ocr-field select:focus { border-color: var(--accent2); }
+  .key-note { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: 'IBM Plex Mono', monospace; }
+  .key-note a { color: var(--accent2); text-decoration: none; }
 
-  .fields {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 8px; padding: 28px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    position: relative; background: var(--bg);
   }
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .field label {
-    font-size: 10px;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-  }
-  .field input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    padding: 8px 10px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .field input:focus {
-    border-color: var(--accent2);
-  }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent2); background: rgba(61,139,255,0.05); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .dz-icon { font-size: 28px; margin-bottom: 6px; }
+  .dz-text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); }
+  .dz-sub { font-size: 11px; color: var(--muted); margin-top: 4px; opacity: 0.6; }
 
-  /* Auto-calc preview */
-  .auto-preview {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-  .auto-item {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 8px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
+  .ocr-spinner { display: none; align-items: center; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); margin-top: 14px; }
+  .ocr-spinner.visible { display: flex; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ocr-preview-row { display: none; gap: 16px; margin-top: 16px; }
+  .ocr-preview-row.visible { display: grid; grid-template-columns: 180px 1fr; }
+  .ocr-img-wrap img { width: 100%; border-radius: 6px; border: 1px solid var(--border); }
+  .ocr-result { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+
+  .ocr-success { display: none; background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.25); border-radius: 6px; padding: 10px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); margin-top: 12px; }
+  .ocr-success.visible { display: block; }
+  .ocr-error { display: none; background: rgba(255,59,92,0.08); border: 1px solid rgba(255,59,92,0.25); border-radius: 6px; padding: 10px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--kill); margin-top: 12px; }
+  .ocr-error.visible { display: block; }
+
+  /* Form */
+  .input-hint { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 20px; }
+  .input-group h3, .auto-group h3 { font-size: 11px; font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .input-group h3 { color: var(--accent2); }
+  .auto-group h3 { color: var(--accent); }
+  .fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; }
+  .field input { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.2s; }
+  .field input:focus { border-color: var(--accent2); }
+  .field input.ai-filled { border-color: var(--accent); background: rgba(0,229,160,0.06); }
+
+  .auto-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .auto-item { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
   .auto-item .al { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; }
   .auto-item .av { font-size: 13px; font-family: 'IBM Plex Mono', monospace; color: var(--accent); }
   .auto-item .af { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 
-  .btn-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-  }
-  .btn {
-    padding: 10px 24px;
-    border: none;
-    border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: opacity 0.2s;
-  }
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .btn { padding: 10px 22px; border: none; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; transition: opacity 0.2s; }
   .btn:hover { opacity: 0.85; }
   .btn-primary { background: var(--accent); color: #000; }
   .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
@@ -209,110 +99,32 @@
   .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
 
   /* Table */
-  .table-section h2 {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 16px;
-  }
-  .table-wrap {
-    overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    font-family: 'IBM Plex Mono', monospace;
-  }
-  thead tr {
-    background: var(--surface);
-  }
-  th {
-    padding: 10px 12px;
-    text-align: right;
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
+  .table-section h2 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+  thead tr { background: var(--surface); }
+  th { padding: 10px 12px; text-align: right; color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); white-space: nowrap; }
   th:nth-child(1), th:nth-child(2), th:nth-child(3) { text-align: left; }
   th.section-ad { color: var(--accent2); }
   th.section-prod { color: var(--accent); }
-
-  td {
-    padding: 9px 12px;
-    text-align: right;
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-    white-space: nowrap;
-  }
+  td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap; }
   td:nth-child(1), td:nth-child(2), td:nth-child(3) { text-align: left; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .status {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-  }
+  .th-divider { border-left: 2px solid var(--border); }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; }
   .status.win { background: rgba(0,229,160,0.15); color: var(--win); border: 1px solid rgba(0,229,160,0.3); }
   .status.kill { background: rgba(255,59,92,0.15); color: var(--kill); border: 1px solid rgba(255,59,92,0.3); }
   .status.break { background: rgba(255,149,0,0.15); color: var(--break); border: 1px solid rgba(255,149,0,0.3); }
-
   .profit-pos { color: var(--win); }
   .profit-neg { color: var(--kill); }
+  .empty { text-align: center; padding: 48px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
 
-  /* section divider in header */
-  .th-divider { border-left: 2px solid var(--border); }
-
-  /* Empty state */
-  .empty {
-    text-align: center;
-    padding: 48px;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-  }
-
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--accent);
-    color: #000;
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 600;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.3s;
-    pointer-events: none;
-  }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: #000; padding: 10px 20px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; }
   .toast.show { opacity: 1; transform: translateY(0); }
 
-  @media (max-width: 1200px) {
-    .summary { grid-template-columns: repeat(3, 1fr); }
-    .input-hint { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 768px) {
-    body { padding: 16px; }
-    .summary { grid-template-columns: repeat(2, 1fr); }
-    .fields { grid-template-columns: 1fr 1fr; }
-    .auto-preview { grid-template-columns: 1fr 1fr; }
-  }
+  @media (max-width: 1200px) { .summary { grid-template-columns: repeat(3, 1fr); } .input-hint { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { body { padding: 16px; } .summary { grid-template-columns: repeat(2, 1fr); } .fields { grid-template-columns: 1fr 1fr; } .auto-preview { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -323,7 +135,7 @@
 </div>
 
 <!-- Summary Cards -->
-<div class="summary" id="summaryCards">
+<div class="summary">
   <div class="card"><div class="label">Total Spend</div><div class="value" id="s-cost">—</div><div class="sub">累计花费</div></div>
   <div class="card"><div class="label">Total Commission</div><div class="value" id="s-comm">—</div><div class="sub">累计佣金</div></div>
   <div class="card" id="sc-profit"><div class="label">Net Profit</div><div class="value" id="s-profit">—</div><div class="sub">净利润</div></div>
@@ -332,13 +144,60 @@
   <div class="card"><div class="label">Avg Amazon CR</div><div class="value" id="s-cr">—</div><div class="sub">亚马逊转化率</div></div>
 </div>
 
-<!-- Input Form -->
-<div class="form-section">
-  <h2>▸ 添加数据</h2>
+<!-- ===== OCR Section ===== -->
+<div class="section-box">
+  <h2>📷 截图自动识别数据（Claude Vision AI）</h2>
+
+  <div class="ocr-top">
+    <div class="ocr-field" style="flex:2;min-width:260px">
+      <label>API 端点 Endpoint <span style="color:var(--muted);font-weight:normal">（中转服务填此处）</span></label>
+      <input id="apiEndpoint" placeholder="留空=官方 / 中转填: https://aicode.cat/v1/messages" oninput="saveSettings()" style="width:100%">
+      <div class="key-note">中转服务用户填写中转地址，国内直接访问更稳定</div>
+    </div>
+    <div class="ocr-field" style="flex:2;min-width:260px">
+      <label>API Key &nbsp;<span style="color:var(--kill);font-size:10px">*必填</span></label>
+      <input id="apiKey" type="password" placeholder="官方 sk-ant-... 或中转服务 Key" oninput="saveSettings()" style="width:100%">
+      <div class="key-note">Key 仅存于本地浏览器 &nbsp;·&nbsp; <a href="https://console.anthropic.com/settings/keys" target="_blank">官方 Key →</a></div>
+    </div>
+    <div class="ocr-field" style="min-width:160px">
+      <label>截图来源平台</label>
+      <select id="platformType" style="height:37px">
+        <option value="auto">🤖 自动识别</option>
+        <option value="yp">YP 联盟平台</option>
+        <option value="meta">Meta Ads Manager</option>
+        <option value="tiktok">TikTok Ads</option>
+        <option value="amazon">Amazon Associates</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="drop-zone" id="dropZone">
+    <input type="file" accept="image/*" id="imgInput" onchange="handleImageSelect(event)">
+    <div class="dz-icon">🖼</div>
+    <div class="dz-text">点击选择 / 拖拽截图到这里</div>
+    <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 广告平台报表、联盟后台数据表格截图均可</div>
+  </div>
+
+  <div class="ocr-spinner" id="ocrSpinner">
+    <div class="spinner"></div>
+    <span id="ocrSpinnerText">AI 正在识别截图中的数据...</span>
+  </div>
+
+  <div class="ocr-preview-row" id="ocrPreviewRow">
+    <div class="ocr-img-wrap"><img id="ocrImg" src="" alt="preview"></div>
+    <div class="ocr-result" id="ocrResult"></div>
+  </div>
+
+  <div class="ocr-success" id="ocrSuccess"></div>
+  <div class="ocr-error" id="ocrError"></div>
+</div>
+
+<!-- ===== Input Form ===== -->
+<div class="section-box">
+  <h2>▸ 数据表单（可手动修改 AI 识别结果）</h2>
   <div class="input-hint">
-    <!-- 手动输入 -->
     <div class="input-group">
-      <h3>📥 手动输入原始数据</h3>
+      <h3>📥 原始数据输入</h3>
       <div class="fields">
         <div class="field"><label>Date 日期</label><input id="f-date" type="date"></div>
         <div class="field"><label>Account 广告账户</label><input id="f-account" placeholder="e.g. TT_01"></div>
@@ -351,59 +210,25 @@
         <div class="field"><label>Commission 佣金 ($)</label><input id="f-comm" type="number" placeholder="0.00" step="0.01" oninput="calcPreview()"></div>
       </div>
     </div>
-    <!-- 自动计算预览 -->
     <div class="auto-group">
-      <h3>⚡ 自动计算（实时预览）</h3>
+      <h3>⚡ 自动计算预览</h3>
       <div class="auto-preview">
-        <div class="auto-item">
-          <div class="al">CTR</div>
-          <div class="av" id="p-ctr">—</div>
-          <div class="af">Clicks / Impressions</div>
-        </div>
-        <div class="auto-item">
-          <div class="al">CPC</div>
-          <div class="av" id="p-cpc">—</div>
-          <div class="af">Cost / Clicks</div>
-        </div>
-        <div class="auto-item">
-          <div class="al">Landing CTR</div>
-          <div class="av" id="p-lctr">—</div>
-          <div class="af">Amazon Clicks / Clicks</div>
-        </div>
-        <div class="auto-item">
-          <div class="al">Amazon CR</div>
-          <div class="av" id="p-cr">—</div>
-          <div class="af">Orders / Amazon Clicks</div>
-        </div>
-        <div class="auto-item">
-          <div class="al">Avg Commission</div>
-          <div class="av" id="p-avgcomm">—</div>
-          <div class="af">Commission / Orders</div>
-        </div>
-        <div class="auto-item">
-          <div class="al">EPC</div>
-          <div class="av" id="p-epc">—</div>
-          <div class="af">Commission / Clicks</div>
-        </div>
-        <div class="auto-item">
-          <div class="al">Profit</div>
-          <div class="av" id="p-profit">—</div>
-          <div class="af">Commission - Cost</div>
-        </div>
-        <div class="auto-item">
-          <div class="al">Status</div>
-          <div class="av" id="p-status">—</div>
-          <div class="af">EPC vs CPC</div>
-        </div>
+        <div class="auto-item"><div class="al">CTR</div><div class="av" id="p-ctr">—</div><div class="af">Clicks / Impressions</div></div>
+        <div class="auto-item"><div class="al">CPC</div><div class="av" id="p-cpc">—</div><div class="af">Cost / Clicks</div></div>
+        <div class="auto-item"><div class="al">Landing CTR</div><div class="av" id="p-lctr">—</div><div class="af">AZ Clicks / Clicks</div></div>
+        <div class="auto-item"><div class="al">Amazon CR</div><div class="av" id="p-cr">—</div><div class="af">Orders / AZ Clicks</div></div>
+        <div class="auto-item"><div class="al">Avg Commission</div><div class="av" id="p-avgcomm">—</div><div class="af">Commission / Orders</div></div>
+        <div class="auto-item"><div class="al">EPC</div><div class="av" id="p-epc">—</div><div class="af">Commission / Clicks</div></div>
+        <div class="auto-item"><div class="al">Profit</div><div class="av" id="p-profit">—</div><div class="af">Commission - Cost</div></div>
+        <div class="auto-item"><div class="al">Status</div><div class="av" id="p-status">—</div><div class="af">EPC vs CPC</div></div>
       </div>
     </div>
   </div>
-
   <div class="btn-row">
     <button class="btn btn-primary" onclick="addData()">＋ Save Record</button>
     <button class="btn btn-secondary" onclick="clearForm()">✕ Clear</button>
     <button class="btn btn-export" onclick="exportCSV()">↓ Export CSV</button>
-    <button class="btn btn-danger" onclick="clearAll()">⚠ Clear All Data</button>
+    <button class="btn btn-danger" onclick="clearAll()">⚠ Clear All</button>
   </div>
 </div>
 
@@ -414,28 +239,11 @@
     <table>
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Account</th>
-          <th>Offer</th>
-          <!-- 原始 -->
-          <th>Impr.</th>
-          <th>Clicks</th>
-          <th>Cost</th>
-          <th>AZ Clicks</th>
-          <th>Orders</th>
-          <th>Commission</th>
-          <!-- 广告质量 -->
-          <th class="th-divider section-ad">CTR</th>
-          <th class="section-ad">CPC</th>
-          <th class="section-ad">Landing CTR</th>
-          <!-- 产品质量 -->
-          <th class="th-divider section-prod">AZ CR</th>
-          <th class="section-prod">Avg Comm.</th>
-          <th class="section-prod">EPC</th>
-          <!-- 结果 -->
-          <th class="th-divider">Profit</th>
-          <th>Status</th>
-          <th>Del</th>
+          <th>Date</th><th>Account</th><th>Offer</th>
+          <th>Impr.</th><th>Clicks</th><th>Cost</th><th>AZ Clicks</th><th>Orders</th><th>Commission</th>
+          <th class="th-divider section-ad">CTR</th><th class="section-ad">CPC</th><th class="section-ad">Landing CTR</th>
+          <th class="th-divider section-prod">AZ CR</th><th class="section-prod">Avg Comm.</th><th class="section-prod">EPC</th>
+          <th class="th-divider">Profit</th><th>Status</th><th>Del</th>
         </tr>
       </thead>
       <tbody id="tableBody">
@@ -455,22 +263,179 @@
   document.getElementById("todayDate").textContent = new Date().toLocaleDateString("zh-CN", {year:"numeric",month:"long",day:"numeric",weekday:"long"});
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("f-date").value = today;
+  // Restore API key
+  const savedKey = localStorage.getItem("anthropicKey") || "";
+  const savedEndpoint = localStorage.getItem("anthropicEndpoint") || "";
+  if (savedKey) document.getElementById("apiKey").value = savedKey;
+  if (savedEndpoint) document.getElementById("apiEndpoint").value = savedEndpoint;
   render();
 
+  // ---- Settings ----
+  function saveSettings() {
+    localStorage.setItem("anthropicKey", document.getElementById("apiKey").value.trim());
+    localStorage.setItem("anthropicEndpoint", document.getElementById("apiEndpoint").value.trim());
+  }
+
+  // ---- Drag & Drop ----
+  const dz = document.getElementById("dropZone");
+  dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+  dz.addEventListener("drop", e => {
+    e.preventDefault(); dz.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) processImage(file);
+  });
+
+  function handleImageSelect(e) {
+    const file = e.target.files[0];
+    if (file) processImage(file);
+  }
+
+  // ---- OCR via Claude API ----
+  async function processImage(file) {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    if (!apiKey) {
+      showOcrError("请先填写 Anthropic API Key");
+      return;
+    }
+
+    // Show preview image
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result;
+      document.getElementById("ocrImg").src = base64;
+      document.getElementById("ocrPreviewRow").classList.add("visible");
+      document.getElementById("ocrResult").textContent = "识别中...";
+      document.getElementById("ocrSuccess").classList.remove("visible");
+      document.getElementById("ocrError").classList.remove("visible");
+      document.getElementById("ocrSpinner").classList.add("visible");
+
+      const imageData = base64.split(",")[1];
+      const mediaType = file.type;
+      const platform = document.getElementById("platformType").value;
+
+      const platformHint = {
+        auto: "这是一个广告或联盟平台的数据截图",
+        yp: "这是 YP 联盟平台（影响力营销/联盟营销平台）的数据报表截图",
+        meta: "这是 Meta Ads Manager（Facebook/Instagram 广告）的数据报表截图",
+        tiktok: "这是 TikTok Ads Manager 的数据报表截图",
+        amazon: "这是 Amazon Associates（亚马逊联盟）后台的数据截图"
+      }[platform];
+
+      const prompt = `${platformHint}。
+
+请仔细阅读截图中的所有数据，提取以下字段的数值，以 JSON 格式返回。如果某个字段在截图中找不到，返回 null。
+
+需要提取的字段：
+- impressions: 曝光量/展示次数 (Impressions/曝光)
+- clicks: 广告点击数 (Clicks/点击)
+- cost: 广告花费，美元数字 (Cost/Spend/花费/消耗，去掉$符号)
+- amazonClicks: 跳转亚马逊的点击数 (Detail Page Views/Amazon Clicks/Landing Clicks/跳转点击)
+- orders: 订单数/购买数 (Orders/Purchases/转化/订单)
+- commission: 佣金/收入，美元数字 (Commission/Revenue/Amount/佣金，去掉$符号)
+- offer: 产品名或广告活动名称
+- account: 广告账户名或平台名
+
+只返回 JSON，不要其他文字，格式示例：
+{"impressions":10000,"clicks":179,"cost":25.50,"amazonClicks":137,"orders":0,"commission":0,"offer":"PuroAir","account":"TT_01"}`;
+
+      try {
+        // Support third-party relay endpoints
+        const customEndpoint = document.getElementById("apiEndpoint").value.trim();
+        const endpoint = customEndpoint || "https://api.anthropic.com/v1/messages";
+        const isRelay = !!customEndpoint;
+
+        // Official Anthropic needs special browser header; relay services use standard headers
+        const headers = {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        };
+        if (!isRelay) headers["anthropic-dangerous-direct-browser-access"] = "true";
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1000,
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image", source: { type: "base64", media_type: mediaType, data: imageData } },
+                { type: "text", text: prompt }
+              ]
+            }]
+          })
+        });
+
+        document.getElementById("ocrSpinner").classList.remove("visible");
+
+        if (!response.ok) {
+          const err = await response.json();
+          showOcrError("API 错误: " + (err.error?.message || response.status));
+          return;
+        }
+
+        const result = await response.json();
+        const rawText = result.content.map(c => c.text || "").join("").trim();
+        document.getElementById("ocrResult").textContent = "识别原始返回：\n" + rawText;
+
+        // Parse JSON
+        const clean = rawText.replace(/```json|```/g, "").trim();
+        let parsed;
+        try { parsed = JSON.parse(clean); }
+        catch { showOcrError("AI 返回格式解析失败，请检查截图是否清晰或手动输入"); return; }
+
+        // Fill form fields
+        const fieldMap = {
+          impressions: "f-impr", clicks: "f-clicks", cost: "f-cost",
+          amazonClicks: "f-aclicks", orders: "f-orders", commission: "f-comm",
+          offer: "f-offer", account: "f-account"
+        };
+
+        const filled = [];
+        for (const [key, id] of Object.entries(fieldMap)) {
+          if (parsed[key] !== null && parsed[key] !== undefined && parsed[key] !== "") {
+            const el = document.getElementById(id);
+            el.value = parsed[key];
+            el.classList.add("ai-filled");
+            setTimeout(() => el.classList.remove("ai-filled"), 3000);
+            filled.push(key);
+          }
+        }
+        // Set today as date if not set
+        if (!document.getElementById("f-date").value) document.getElementById("f-date").value = today;
+
+        calcPreview();
+
+        const successMsg = `✓ AI 识别成功！已自动填入 ${filled.length} 个字段：${filled.join(", ")}\n请核对数据后点击 Save Record 保存。`;
+        document.getElementById("ocrSuccess").textContent = successMsg;
+        document.getElementById("ocrSuccess").classList.add("visible");
+
+      } catch (err) {
+        document.getElementById("ocrSpinner").classList.remove("visible");
+        showOcrError("请求失败: " + err.message + "（请检查 API Key 是否正确）");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function showOcrError(msg) {
+    document.getElementById("ocrSpinner").classList.remove("visible");
+    document.getElementById("ocrError").textContent = "✕ " + msg;
+    document.getElementById("ocrError").classList.add("visible");
+  }
+
   // ---- Calc helpers ----
-  function pct(a, b) { return b > 0 ? (a / b * 100).toFixed(2) + "%" : "—"; }
-  function dollar(v) { return isNaN(v) || !isFinite(v) ? "—" : "$" + Number(v).toFixed(2); }
-  function fix2(v) { return isNaN(v) || !isFinite(v) ? "—" : Number(v).toFixed(2); }
-
   function calcRow(d) {
-    const ctr       = d.impressions > 0 ? d.clicks / d.impressions * 100 : null;
-    const cpc       = d.clicks > 0 ? d.cost / d.clicks : null;
-    const landingCtr= d.clicks > 0 ? d.amazonClicks / d.clicks * 100 : null;
-    const amazonCR  = d.amazonClicks > 0 ? d.orders / d.amazonClicks * 100 : null;
-    const avgComm   = d.orders > 0 ? d.commission / d.orders : null;
-    const epc       = d.clicks > 0 ? d.commission / d.clicks : null;
-    const profit    = d.commission - d.cost;
-
+    const ctr        = d.impressions > 0 ? d.clicks / d.impressions * 100 : null;
+    const cpc        = d.clicks > 0 ? d.cost / d.clicks : null;
+    const landingCtr = d.clicks > 0 ? d.amazonClicks / d.clicks * 100 : null;
+    const amazonCR   = d.amazonClicks > 0 ? d.orders / d.amazonClicks * 100 : null;
+    const avgComm    = d.orders > 0 ? d.commission / d.orders : null;
+    const epc        = d.clicks > 0 ? d.commission / d.clicks : null;
+    const profit     = d.commission - d.cost;
     let status = "KILL", cls = "kill";
     if (epc !== null && cpc !== null) {
       if (epc > cpc) { status = "WINNER"; cls = "win"; }
@@ -479,93 +444,74 @@
     return { ctr, cpc, landingCtr, amazonCR, avgComm, epc, profit, status, cls };
   }
 
-  // ---- Live Preview ----
   function calcPreview() {
     const d = getFormValues();
-    if (!d) return;
     const r = calcRow(d);
-    document.getElementById("p-ctr").textContent    = r.ctr !== null ? r.ctr.toFixed(2) + "%" : "—";
-    document.getElementById("p-cpc").textContent    = r.cpc !== null ? "$" + r.cpc.toFixed(3) : "—";
-    document.getElementById("p-lctr").textContent   = r.landingCtr !== null ? r.landingCtr.toFixed(2) + "%" : "—";
-    document.getElementById("p-cr").textContent     = r.amazonCR !== null ? r.amazonCR.toFixed(2) + "%" : "—";
-    document.getElementById("p-avgcomm").textContent= r.avgComm !== null ? "$" + r.avgComm.toFixed(2) : "—";
-    document.getElementById("p-epc").textContent    = r.epc !== null ? "$" + r.epc.toFixed(3) : "—";
-    document.getElementById("p-profit").textContent = isNaN(r.profit) ? "—" : (r.profit >= 0 ? "+" : "") + "$" + r.profit.toFixed(2);
-    document.getElementById("p-status").textContent = r.status;
-    document.getElementById("p-status").style.color = r.cls === "win" ? "var(--win)" : r.cls === "break" ? "var(--break)" : "var(--kill)";
+    document.getElementById("p-ctr").textContent     = r.ctr !== null ? r.ctr.toFixed(2) + "%" : "—";
+    document.getElementById("p-cpc").textContent     = r.cpc !== null ? "$" + r.cpc.toFixed(3) : "—";
+    document.getElementById("p-lctr").textContent    = r.landingCtr !== null ? r.landingCtr.toFixed(2) + "%" : "—";
+    document.getElementById("p-cr").textContent      = r.amazonCR !== null ? r.amazonCR.toFixed(2) + "%" : "—";
+    document.getElementById("p-avgcomm").textContent = r.avgComm !== null ? "$" + r.avgComm.toFixed(2) : "—";
+    document.getElementById("p-epc").textContent     = r.epc !== null ? "$" + r.epc.toFixed(3) : "—";
+    document.getElementById("p-profit").textContent  = isNaN(r.profit) ? "—" : (r.profit >= 0 ? "+" : "") + "$" + r.profit.toFixed(2);
+    document.getElementById("p-status").textContent  = r.status;
+    document.getElementById("p-status").style.color  = r.cls === "win" ? "var(--win)" : r.cls === "break" ? "var(--break)" : "var(--kill)";
   }
 
   function getFormValues() {
     return {
-      date:         document.getElementById("f-date").value,
-      account:      document.getElementById("f-account").value,
-      offer:        document.getElementById("f-offer").value,
-      impressions:  Number(document.getElementById("f-impr").value) || 0,
-      clicks:       Number(document.getElementById("f-clicks").value) || 0,
-      cost:         Number(document.getElementById("f-cost").value) || 0,
+      date: document.getElementById("f-date").value,
+      account: document.getElementById("f-account").value,
+      offer: document.getElementById("f-offer").value,
+      impressions: Number(document.getElementById("f-impr").value) || 0,
+      clicks: Number(document.getElementById("f-clicks").value) || 0,
+      cost: Number(document.getElementById("f-cost").value) || 0,
       amazonClicks: Number(document.getElementById("f-aclicks").value) || 0,
-      orders:       Number(document.getElementById("f-orders").value) || 0,
-      commission:   Number(document.getElementById("f-comm").value) || 0,
+      orders: Number(document.getElementById("f-orders").value) || 0,
+      commission: Number(document.getElementById("f-comm").value) || 0,
     };
   }
 
-  // ---- Add Data ----
   function addData() {
     const d = getFormValues();
     if (!d.date || !d.account || !d.offer) { showToast("请填写 Date / Account / Offer", true); return; }
-    data.push(d);
-    save();
-    render();
-    clearForm();
+    data.push(d); save(); render(); clearForm();
     showToast("✓ 记录已保存");
   }
 
   function clearForm() {
     ["f-impr","f-clicks","f-cost","f-aclicks","f-orders","f-comm"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("f-date").value = today;
-    ["p-ctr","p-cpc","p-lctr","p-cr","p-avgcomm","p-epc","p-profit","p-status"].forEach(id => { document.getElementById(id).textContent = "—"; document.getElementById(id).style.color = ""; });
+    ["p-ctr","p-cpc","p-lctr","p-cr","p-avgcomm","p-epc","p-profit","p-status"].forEach(id => {
+      document.getElementById(id).textContent = "—";
+      document.getElementById(id).style.color = "";
+    });
+    document.getElementById("ocrSuccess").classList.remove("visible");
+    document.getElementById("ocrError").classList.remove("visible");
   }
 
-  function deleteRow(i) {
-    data.splice(i, 1);
-    save();
-    render();
-    showToast("已删除");
-  }
+  function deleteRow(i) { data.splice(i, 1); save(); render(); showToast("已删除"); }
 
   function clearAll() {
     if (!confirm("确认清空所有数据？")) return;
-    data = [];
-    save();
-    render();
-    showToast("已清空", true);
+    data = []; save(); render(); showToast("已清空", true);
   }
 
-  function save() {
-    localStorage.setItem("affiliateData_v2", JSON.stringify(data));
-  }
+  function save() { localStorage.setItem("affiliateData_v2", JSON.stringify(data)); }
 
-  // ---- Render Table ----
   function render() {
     const tbody = document.getElementById("tableBody");
     if (data.length === 0) {
       tbody.innerHTML = `<tr><td colspan="18" class="empty">暂无数据，请添加第一条记录</td></tr>`;
-      updateSummary([]);
-      return;
+      updateSummary([]); return;
     }
-
-    const rows = data.map((d, i) => {
+    tbody.innerHTML = data.map((d, i) => {
       const r = calcRow(d);
-      const profitClass = r.profit >= 0 ? "profit-pos" : "profit-neg";
+      const pc = r.profit >= 0 ? "profit-pos" : "profit-neg";
       return `<tr>
-        <td>${d.date}</td>
-        <td>${d.account}</td>
-        <td>${d.offer}</td>
-        <td>${d.impressions.toLocaleString()}</td>
-        <td>${d.clicks.toLocaleString()}</td>
-        <td>$${d.cost.toFixed(2)}</td>
-        <td>${d.amazonClicks}</td>
-        <td>${d.orders}</td>
+        <td>${d.date}</td><td>${d.account}</td><td>${d.offer}</td>
+        <td>${d.impressions.toLocaleString()}</td><td>${d.clicks.toLocaleString()}</td>
+        <td>$${d.cost.toFixed(2)}</td><td>${d.amazonClicks}</td><td>${d.orders}</td>
         <td>$${d.commission.toFixed(2)}</td>
         <td class="th-divider">${r.ctr !== null ? r.ctr.toFixed(2)+"%" : "—"}</td>
         <td>${r.cpc !== null ? "$"+r.cpc.toFixed(3) : "—"}</td>
@@ -573,72 +519,54 @@
         <td class="th-divider">${r.amazonCR !== null ? r.amazonCR.toFixed(2)+"%" : "—"}</td>
         <td>${r.avgComm !== null ? "$"+r.avgComm.toFixed(2) : "—"}</td>
         <td>${r.epc !== null ? "$"+r.epc.toFixed(3) : "—"}</td>
-        <td class="th-divider ${profitClass}">${r.profit >= 0 ? "+" : ""}$${r.profit.toFixed(2)}</td>
+        <td class="th-divider ${pc}">${r.profit >= 0 ? "+" : ""}$${r.profit.toFixed(2)}</td>
         <td><span class="status ${r.cls}">${r.status}</span></td>
-        <td><span style="cursor:pointer;color:var(--muted);font-size:14px;" onclick="deleteRow(${i})" title="删除">✕</span></td>
+        <td><span style="cursor:pointer;color:var(--muted)" onclick="deleteRow(${i})">✕</span></td>
       </tr>`;
-    });
-    tbody.innerHTML = rows.join("");
+    }).join("");
     updateSummary(data);
   }
 
-  // ---- Summary Cards ----
   function updateSummary(rows) {
     if (rows.length === 0) {
       ["s-cost","s-comm","s-profit","s-ctr","s-lctr","s-cr"].forEach(id => document.getElementById(id).textContent = "—");
       return;
     }
-    const totalCost   = rows.reduce((s,d) => s + d.cost, 0);
-    const totalComm   = rows.reduce((s,d) => s + d.commission, 0);
-    const totalProfit = totalComm - totalCost;
-    const totalImpr   = rows.reduce((s,d) => s + d.impressions, 0);
-    const totalClicks = rows.reduce((s,d) => s + d.clicks, 0);
-    const totalAZClk  = rows.reduce((s,d) => s + d.amazonClicks, 0);
-    const totalOrders = rows.reduce((s,d) => s + d.orders, 0);
-
-    document.getElementById("s-cost").textContent   = "$" + totalCost.toFixed(2);
-    document.getElementById("s-comm").textContent   = "$" + totalComm.toFixed(2);
-    document.getElementById("s-profit").textContent = (totalProfit >= 0 ? "+" : "") + "$" + totalProfit.toFixed(2);
-    document.getElementById("s-ctr").textContent    = totalImpr > 0 ? (totalClicks/totalImpr*100).toFixed(2)+"%" : "—";
-    document.getElementById("s-lctr").textContent   = totalClicks > 0 ? (totalAZClk/totalClicks*100).toFixed(2)+"%" : "—";
-    document.getElementById("s-cr").textContent     = totalAZClk > 0 ? (totalOrders/totalAZClk*100).toFixed(2)+"%" : "—";
-
+    const tCost   = rows.reduce((s,d) => s+d.cost, 0);
+    const tComm   = rows.reduce((s,d) => s+d.commission, 0);
+    const tProfit = tComm - tCost;
+    const tImpr   = rows.reduce((s,d) => s+d.impressions, 0);
+    const tClk    = rows.reduce((s,d) => s+d.clicks, 0);
+    const tAZClk  = rows.reduce((s,d) => s+d.amazonClicks, 0);
+    const tOrders = rows.reduce((s,d) => s+d.orders, 0);
+    document.getElementById("s-cost").textContent   = "$"+tCost.toFixed(2);
+    document.getElementById("s-comm").textContent   = "$"+tComm.toFixed(2);
+    document.getElementById("s-profit").textContent = (tProfit>=0?"+":"")+"$"+tProfit.toFixed(2);
+    document.getElementById("s-ctr").textContent    = tImpr>0 ? (tClk/tImpr*100).toFixed(2)+"%" : "—";
+    document.getElementById("s-lctr").textContent   = tClk>0 ? (tAZClk/tClk*100).toFixed(2)+"%" : "—";
+    document.getElementById("s-cr").textContent     = tAZClk>0 ? (tOrders/tAZClk*100).toFixed(2)+"%" : "—";
     const card = document.getElementById("sc-profit");
     card.classList.remove("good","bad");
-    card.classList.add(totalProfit >= 0 ? "good" : "bad");
+    card.classList.add(tProfit >= 0 ? "good" : "bad");
   }
 
-  // ---- Export CSV ----
   function exportCSV() {
     if (data.length === 0) { showToast("没有数据可导出", true); return; }
     const headers = ["Date","Account","Offer","Impressions","Clicks","Cost","AZ_Clicks","Orders","Commission","CTR%","CPC","Landing_CTR%","AZ_CR%","Avg_Commission","EPC","Profit","Status"];
     const rows = data.map(d => {
       const r = calcRow(d);
-      return [
-        d.date, d.account, d.offer,
-        d.impressions, d.clicks, d.cost.toFixed(2),
-        d.amazonClicks, d.orders, d.commission.toFixed(2),
-        r.ctr !== null ? r.ctr.toFixed(2) : "",
-        r.cpc !== null ? r.cpc.toFixed(3) : "",
-        r.landingCtr !== null ? r.landingCtr.toFixed(2) : "",
-        r.amazonCR !== null ? r.amazonCR.toFixed(2) : "",
-        r.avgComm !== null ? r.avgComm.toFixed(2) : "",
-        r.epc !== null ? r.epc.toFixed(3) : "",
-        r.profit.toFixed(2),
-        r.status
-      ].join(",");
+      return [d.date,d.account,d.offer,d.impressions,d.clicks,d.cost.toFixed(2),d.amazonClicks,d.orders,d.commission.toFixed(2),
+        r.ctr!==null?r.ctr.toFixed(2):"", r.cpc!==null?r.cpc.toFixed(3):"", r.landingCtr!==null?r.landingCtr.toFixed(2):"",
+        r.amazonCR!==null?r.amazonCR.toFixed(2):"", r.avgComm!==null?r.avgComm.toFixed(2):"",
+        r.epc!==null?r.epc.toFixed(3):"", r.profit.toFixed(2), r.status].join(",");
     });
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([[headers.join(","),...rows].join("\n")], {type:"text/csv;charset=utf-8;"});
     const a = document.createElement("a");
-    a.href = url; a.download = "affiliate_data_" + today + ".csv";
-    a.click(); URL.revokeObjectURL(url);
+    a.href = URL.createObjectURL(blob); a.download = "affiliate_data_"+today+".csv"; a.click();
     showToast("CSV 已导出");
   }
 
-  // ---- Toast ----
-  function showToast(msg, isErr = false) {
+  function showToast(msg, isErr=false) {
     const t = document.getElementById("toast");
     t.textContent = msg;
     t.style.background = isErr ? "var(--warn)" : "var(--accent)";
