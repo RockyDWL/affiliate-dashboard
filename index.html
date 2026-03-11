@@ -56,7 +56,8 @@
   .drop-zone:focus, .drop-zone.paste-ready { border-color: var(--accent); background: rgba(0,229,160,0.04); box-shadow: 0 0 0 3px rgba(0,229,160,0.12); }
   .drop-zone.pasted { border-color: var(--accent); background: rgba(0,229,160,0.08); animation: flash 0.4s ease; }
   @keyframes flash { 0%,100%{background:rgba(0,229,160,0.08)} 50%{background:rgba(0,229,160,0.22)} }
-  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; pointer-events: none; }
+  .drop-zone .dz-clickable { position: absolute; inset: 0; cursor: pointer; z-index: 1; }
   .dz-icon { font-size: 28px; margin-bottom: 6px; }
   .dz-text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); }
   .dz-sub { font-size: 11px; color: var(--muted); margin-top: 4px; opacity: 0.6; }
@@ -296,14 +297,18 @@
   </div>
 
   <div id="claudeInputArea">
-    <div class="drop-zone" id="dropZone" tabindex="0" title="点击上传或拖拽截图">
-      <input type="file" accept="image/*" id="imgInput" onchange="handleImageSelect(event)">
+    <div class="drop-zone" id="dropZone">
+      <label class="dz-clickable" for="imgInput" title="点击选择文件"></label>
+      <input type="file" accept="image/*" id="imgInput" onchange="handleImageSelect(event)" style="display:none">
       <div class="dz-icon">🖼</div>
       <div class="dz-text" id="dropZoneText">点击选择文件 / 拖拽截图到这里</div>
       <div class="dz-sub">支持 PNG · JPG · WEBP &nbsp;|&nbsp; 广告平台报表、联盟后台数据表格截图均可</div>
-      <div style="margin-top:10px;position:relative;z-index:10">
-        <button type="button" onclick="event.stopPropagation();pasteFromClipboard('claude')" class="btn btn-primary" style="padding:7px 18px;font-size:11px">
-          📋 粘贴截图 (Ctrl+V)
+      <div style="margin-top:12px;position:relative;z-index:10;display:flex;gap:8px;justify-content:center">
+        <button type="button" onclick="event.preventDefault();event.stopPropagation();document.getElementById('imgInput').click()" class="btn btn-secondary" style="padding:7px 16px;font-size:11px">
+          📁 选择文件
+        </button>
+        <button type="button" onclick="event.preventDefault();event.stopPropagation();pasteFromClipboard('claude')" class="btn btn-primary" style="padding:7px 16px;font-size:11px">
+          📋 粘贴截图
         </button>
       </div>
     </div>
@@ -407,23 +412,25 @@
   let maskEnabled = false;
   const DB_KEY = "affiliateData_v2";
 
-  // Safe storage wrapper - falls back to memory if localStorage is unavailable (e.g. preview environments)
+  // Safe storage wrapper – prefers localStorage, falls back gracefully in restricted environments
   const _memStore = {};
+  const _useLocal = (() => { try { localStorage.setItem("_t","1"); localStorage.removeItem("_t"); return true; } catch(e) { return false; } })();
+  const _useSess  = (() => { try { sessionStorage.setItem("_t","1"); sessionStorage.removeItem("_t"); return true; } catch(e) { return false; } })();
   const SafeStorage = {
     get(key) {
-      try { return localStorage.getItem(key); } catch(e) {
-        try { return sessionStorage.getItem(key); } catch(e2) { return _memStore[key] ?? null; }
-      }
+      if (_useLocal) return localStorage.getItem(key);
+      if (_useSess)  return sessionStorage.getItem(key);
+      return _memStore[key] ?? null;
     },
     set(key, val) {
-      try { localStorage.setItem(key, val); } catch(e) {
-        try { sessionStorage.setItem(key, val); } catch(e2) { _memStore[key] = val; }
-      }
+      if (_useLocal) { localStorage.setItem(key, val); return; }
+      if (_useSess)  { sessionStorage.setItem(key, val); return; }
+      _memStore[key] = val;
     },
     remove(key) {
-      try { localStorage.removeItem(key); } catch(e) {
-        try { sessionStorage.removeItem(key); } catch(e2) { delete _memStore[key]; }
-      }
+      if (_useLocal) { localStorage.removeItem(key); return; }
+      if (_useSess)  { sessionStorage.removeItem(key); return; }
+      delete _memStore[key];
     }
   };
 
@@ -467,32 +474,14 @@
   // ============================================================
   async function loadData() {
     try {
-      if (storageMode === "localstorage") {
-        data = JSON.parse(SafeStorage.get(DB_KEY) || "[]");
-      } else if (storageMode === "sessionstorage") {
-        data = JSON.parse(SafeStorage.get(DB_KEY+"_ss") || "[]");
-      } else if (storageMode === "indexeddb") {
-        data = await idbGetAll();
-      } else if (storageMode === "file") {
-        data = JSON.parse(SafeStorage.get(DB_KEY+"_file") || "[]");
-      }
+      const raw = SafeStorage.get(DB_KEY);
+      data = raw ? JSON.parse(raw) : [];
     } catch(e) { data = []; }
   }
 
   async function save() {
     try {
-      if (storageMode === "localstorage") {
-        SafeStorage.set(DB_KEY, JSON.stringify(data));
-      } else if (storageMode === "sessionstorage") {
-        SafeStorage.set(DB_KEY+"_ss", JSON.stringify(data));
-      } else if (storageMode === "indexeddb") {
-        await idbSaveAll(data);
-      } else if (storageMode === "file") {
-        // file mode: keep in session memory + auto-download on every save
-        SafeStorage.set(DB_KEY+"_file", JSON.stringify(data));
-        downloadJSON(data, "affiliate_autosave_"+today+".json");
-        showToast("💾 已自动下载到本地文件");
-      }
+      SafeStorage.set(DB_KEY, JSON.stringify(data));
       updateStorageStatus();
     } catch(e) { showToast("存储失败: "+e, true); }
   }
